@@ -11,11 +11,11 @@ Design-faithful, responsive Next.js storefront connected to Shopify Storefront A
 
 Preview prices are draft-only and cannot be purchased. Set Shopify credentials and `SHOPIFY_MODE=live` only after products are published to the Headless sales channel. Keep all tokens in server-side environment variables; never commit `.env.local`.
 
-## Shopify and GoDaddy handover
+## Shopify and Netlify handover
 
 - [Shopify setup](docs/SHOPIFY_SETUP.md)
 - [Shopify staff walkthrough](docs/SHOPIFY_STAFF_GUIDE.md)
-- [Launch, rollback, and support runbook](docs/LAUNCH_AND_SUPPORT_RUNBOOK.md)
+- [Launch and support runbook](docs/LAUNCH_AND_SUPPORT_RUNBOOK.md)
 
 ## Checks
 

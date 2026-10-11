@@ -13,7 +13,7 @@ Preview mode uses the supplied product photography, approved product names and d
 
 ## 2. Storefront API
 
-Set these server environment variables in `.env.local` and the GoDaddy app settings:
+Set these server environment variables in `.env.local` and the Netlify site settings. In Netlify, set runtime credentials for both **Builds** and **Functions** so Next.js server routes can use them:
 
 - `SHOPIFY_STORE_DOMAIN=projectbeej-1686bmnd.myshopify.com`
 - `SHOPIFY_API_VERSION=2026-10`
@@ -85,7 +85,7 @@ The privacy policy, refund policy, and terms page read Shopify's native policy f
 
 ## 4. Newsletter consent
 
-Newsletter sign-up requires a separate Shopify Admin API app token in `SHOPIFY_ADMIN_ACCESS_TOKEN`. Grant only `write_customers`, then keep that credential in GoDaddy's server environment, never in `NEXT_PUBLIC_*`, browser code, or source control. The endpoint validates email and the required, unchecked-by-default consent box, rate-limits requests, upserts the Shopify customer, and records the consent timestamp and single-opt-in level. No signup is reported as successful if Shopify is not configured or rejects the write.
+Newsletter sign-up requires a separate Shopify Admin API app token in `SHOPIFY_ADMIN_ACCESS_TOKEN`. Grant only `write_customers`, then keep that credential in Netlify's server environment, never in `NEXT_PUBLIC_*`, browser code, or source control. The endpoint validates email and the required, unchecked-by-default consent box, rate-limits requests, upserts the Shopify customer, and records the consent timestamp and single-opt-in level. No signup is reported as successful if Shopify is not configured or rejects the write.
 
 ## 5. Payments, checkout, and shipping
 
@@ -93,18 +93,17 @@ Cart and Buy Now both create Shopify carts and redirect to a fresh Shopify check
 
 COD is not enabled. Do not turn it on until merchant dispatch and collection workflows are approved. Amazon MCF is not connected in this release; complete seller onboarding, connector/SKU mapping, inventory and tracking checks before changing fulfillment.
 
-## 6. GoDaddy Node.js Hosting
+## 6. Netlify hosting
 
-- Upload/deploy the project with `package.json` at the app root and the `package-lock.json` created by `npm install`.
-- Select Node.js 22.
-- Build command: `npm run build`.
-- Start command: `npm start`.
-- The custom `server.mjs` binds to GoDaddy's assigned `PORT` and listens on `0.0.0.0`.
-- Add the server variables above in GoDaddy's app configuration. Do not upload `.env.local`.
-- Set `SITE_URL` to the final HTTPS GoDaddy/custom domain. This enables canonical URLs and the sitemap; without it, the app does not claim an unverified canonical domain.
-- Attach the domain, enable GoDaddy SSL, and verify HTTP-to-HTTPS and preferred-host redirects after DNS is active.
+- Connect the GitHub repository `Manan1511/ProjectBeej` to a Netlify site and use `main` as the production branch.
+- The root `netlify.toml` sets Node.js 22, `npm run build`, and `.next` as the publish directory. Netlify detects Next.js and supplies its managed Next.js runtime; do not add a pinned `@netlify/plugin-nextjs` dependency or a static-export setting.
+- Add the server environment variables above in Netlify's site settings with **Builds** and **Functions** scopes. Do not put secret values in `netlify.toml`, Git, `.env.example`, or `NEXT_PUBLIC_*` variables.
+- Set `SHOPIFY_MODE=preview` for Deploy Preview and branch-deploy contexts; keep purchases disabled in those contexts. Set `SHOPIFY_MODE=live` in Production only after catalog and checkout are ready. These variables must be available to Functions at runtime, not only to the build.
+- Restrict non-production deployments to team login or a site password before sharing a preview URL. Netlify preview URLs are otherwise accessible to anyone who has the link.
+- Set `SITE_URL` to the final HTTPS custom domain after it is attached. This enables canonical URLs and the sitemap; without it, the app does not claim an unverified canonical domain.
+- Configure the custom domain in Netlify, follow its DNS instructions, and verify HTTPS and the preferred hostname after DNS validation. Netlify provisions TLS for the connected domain.
 
-Keep one Node app process for the in-process keyed cart-write lock. The storefront also serializes cart actions in a browser session and re-reads Shopify state before mutations. Review GoDaddy's scaling/session behavior before adding multiple app instances.
+Netlify runs Next.js server routes as managed functions, so there is no persistent Node server or custom start command in production. The browser serializes cart writes and the server re-reads the cart before mutations. The in-memory keyed lock only coordinates requests handled by the same warm function instance; it is not a distributed lock across Netlify instances. If cart writes must be serialized across separate clients or instances, add and validate a shared lock/queue before making that guarantee.
 
 ## 7. Launch checks requiring merchant access
 
@@ -113,5 +112,5 @@ Keep one Node app process for the in-process keyed cart-write lock. The storefro
 - Add and approve Shopify policies and About page content; confirm business contact email and WhatsApp/social links.
 - Activate Razorpay Secure and verify Shopify order, payment state, totals, inventory decrement, failure and retry paths with an authorized test transaction.
 - Confirm shipping zones and rates in checkout; test the ₹499 threshold only if the configured Shopify rates actually match it.
-- Configure GoDaddy hosting/domain/SSL, then check checkout, SEO, redirects and secret exposure on the deployed host.
+- Configure Netlify hosting/domain/HTTPS, then check checkout, SEO, redirects and secret exposure on the deployed host.
 - Do not use a live test order without merchant authorization and a plan to prevent unintended dispatch.
