@@ -1,16 +1,16 @@
 import "server-only";
 import { readCartCookie } from "@/lib/commerce";
-import type { BeejProduct, ProductFaq, ProductReview, ShopifyCart, SiteSettings } from "@/lib/types";
+import type { BeejProduct, CartLine, ProductFaq, ProductReview, ShopifyCart, SiteSettings } from "@/lib/types";
 import { parseHomeCopy } from "@/lib/storefront-settings";
 
 const API_VERSION = process.env.SHOPIFY_API_VERSION || "2026-10";
 const domain = process.env.SHOPIFY_STORE_DOMAIN || "projectbeej-1686bmnd.myshopify.com";
 const previewCatalog = [
-  { handle: "peri-peri", title: "Peri Peri", productType: "Roasted Makhana", description: "Chilli heat that lifts heavy. Smoky, tangy, a little loud.", price: "299", tint: "#F5A287", mascot: "/assets/mc-lifter.png", images: ["/assets/peri-drop.jpg", "/assets/peri-flatlay.jpg"], player: "The Lifter" },
-  { handle: "cheese", title: "Cheese", productType: "Roasted Makhana", description: "Golden, cheesy and effortlessly cool.", price: "299", tint: "#FFD98E", mascot: "/assets/mc-skater.png", images: ["/assets/cheese-drop.jpg", "/assets/cheese-table.jpg"], player: "The Skater" },
-  { handle: "himalayan-salt-pepper", title: "Himalayan Salt & Pepper", productType: "Roasted Makhana", description: "Pink salt, cracked pepper. Never misses.", price: "299", tint: "#F7B3BB", mascot: "/assets/mc-runner.png", images: ["/assets/himalayan-reach.jpg", "/assets/himalayan-hand.jpg", "/assets/himalayan-window.jpg", "/assets/himalayan-yoga.jpg"], player: "The Striker" },
-  { handle: "pudina", title: "Pudina", productType: "Roasted Makhana", description: "Cool mint with a sharp finish.", price: "299", tint: "#B9DCA3", mascot: "/assets/mc-pickleball.png", images: ["/assets/pudina-hands.jpg", "/assets/pudina-pop.jpg"], player: "The Smasher" },
-  { handle: "classic-makhana", title: "Classic Makhana", productType: "Ready to Roast", description: "Plain and simple — roast it your way at home.", price: "149", tint: "#C4D19B", mascot: "/assets/makhana-lotus.png", images: ["/assets/makhana-pond.jpg", "/assets/makhana-lotus.jpg", "/assets/pack.jpg"], player: "The Original" },
+  { handle: "peri-peri", title: "Peri Peri", productType: "Roasted Makhana", description: "Chilli heat that lifts heavy. Smoky, tangy, a little loud.", price: "299", tint: "#F5A287", mascot: "/assets/squad-lifter-hq.png", images: ["/assets/peri-drop.jpg", "/assets/peri-flatlay.jpg"], player: "The Lifter" },
+  { handle: "cheese", title: "Cheese", productType: "Roasted Makhana", description: "Golden, cheesy and effortlessly cool.", price: "299", tint: "#FFD98E", mascot: "/assets/squad-skater-hq.png", images: ["/assets/cheese-drop.jpg", "/assets/cheese-table.jpg"], player: "The Skater" },
+  { handle: "himalayan-salt-pepper", title: "Himalayan Salt & Pepper", productType: "Roasted Makhana", description: "Pink salt, cracked pepper. Never misses.", price: "299", tint: "#F7B3BB", mascot: "/assets/squad-runner-hq.png", images: ["/assets/himalayan-reach.jpg", "/assets/himalayan-hand.jpg", "/assets/himalayan-window.jpg", "/assets/himalayan-yoga.jpg"], player: "The Striker" },
+  { handle: "pudina", title: "Pudina", productType: "Roasted Makhana", description: "Cool mint with a sharp finish.", price: "299", tint: "#B9DCA3", mascot: "/assets/squad-pickleball-hq.png", images: ["/assets/pudina-hands.jpg", "/assets/pudina-pop.jpg"], player: "The Smasher" },
+  { handle: "classic-makhana", title: "Classic Makhana", productType: "Ready to Roast", description: "Plain and simple. Roast it your way at home.", price: "149", tint: "#C4D19B", mascot: "/assets/makhana-lotus.png", images: ["/assets/makhana-pond.jpg", "/assets/makhana-lotus.jpg", "/assets/pack.jpg"], player: "The Original" },
 ];
 
 const PRODUCT_FIELDS = `
@@ -147,7 +147,7 @@ function mapProduct(raw: ShopifyProductRaw): BeejProduct {
     availableForSale: raw.availableForSale,
     collectionHandles: raw.collections.nodes.map((collection) => collection.handle),
     metafields: { faqs: raw.beejFaqs?.value || "", approvedReviews: raw.beejApprovedReviews?.value || "" },
-    preview: false,
+    preview: getStorefrontMode() === "preview",
   };
 }
 
@@ -272,45 +272,64 @@ export async function getShopifyPolicy(key: "privacyPolicy" | "refundPolicy" | "
 
 const CART_FIELDS = `id checkoutUrl totalQuantity cost { subtotalAmount { amount currencyCode } totalAmount { amount currencyCode } } lines(first: 20) { nodes { id quantity merchandise { ... on ProductVariant { id title availableForSale quantityAvailable price { amount currencyCode } selectedOptions { name value } product { id title handle productType featuredImage { url altText } } } } } }`;
 
+type ShopifyCartConnection = Omit<ShopifyCart, "lines"> & { lines: { nodes: CartLine[] } };
+type ShopifyCartMutation = {
+  cart: ShopifyCartConnection | null;
+  userErrors: Array<{ message: string; code?: string | null }>;
+  warnings: Array<{ message: string }>;
+};
+
+function normalizeShopifyCart(cart: ShopifyCartConnection | null): ShopifyCart | null {
+  return cart ? { ...cart, lines: cart.lines.nodes } : null;
+}
+
+function normalizeCartMutation<T extends { cart: ShopifyCartConnection | null }>(mutation: T): Omit<T, "cart"> & { cart: ShopifyCart | null } {
+  return { ...mutation, cart: normalizeShopifyCart(mutation.cart) };
+}
+
 export async function getShopifyCart(cartId: string, buyerIp?: string | null): Promise<ShopifyCart | null> {
   const safeId = readCartCookie(cartId);
   if (!safeId) return null;
-  const data = await storefrontQuery<{ cart: ShopifyCart | null }>(
+  const data = await storefrontQuery<{ cart: ShopifyCartConnection | null }>(
     `query BeejCart($id: ID!) { cart(id: $id) { ${CART_FIELDS} } }`,
     { id: safeId },
     buyerIp,
   );
-  return data.cart;
+  return normalizeShopifyCart(data.cart);
 }
 
 export async function createShopifyCart(lines: Array<{ merchandiseId: string; quantity: number }>, buyerIp?: string | null) {
-  return storefrontQuery<{ cartCreate: { cart: ShopifyCart | null; userErrors: Array<{ message: string; code?: string | null }>; warnings: Array<{ message: string }> } }>(
+  const data = await storefrontQuery<{ cartCreate: ShopifyCartMutation }>(
     `mutation BeejCartCreate($input: CartInput!) { cartCreate(input: $input) { cart { ${CART_FIELDS} } userErrors { message code } warnings { message } } }`,
     { input: { lines } },
     buyerIp,
   );
+  return { ...data, cartCreate: normalizeCartMutation(data.cartCreate) };
 }
 
 export async function addShopifyCartLines(cartId: string, lines: Array<{ merchandiseId: string; quantity: number }>, buyerIp?: string | null) {
-  return storefrontQuery<{ cartLinesAdd: { cart: ShopifyCart | null; userErrors: Array<{ message: string; code?: string | null }>; warnings: Array<{ message: string }> } }>(
+  const data = await storefrontQuery<{ cartLinesAdd: ShopifyCartMutation }>(
     `mutation BeejCartLinesAdd($cartId: ID!, $lines: [CartLineInput!]!) { cartLinesAdd(cartId: $cartId, lines: $lines) { cart { ${CART_FIELDS} } userErrors { message code } warnings { message } } }`,
     { cartId, lines },
     buyerIp,
   );
+  return { ...data, cartLinesAdd: normalizeCartMutation(data.cartLinesAdd) };
 }
 
 export async function updateShopifyCartLines(cartId: string, lines: Array<{ id: string; quantity: number }>, buyerIp?: string | null) {
-  return storefrontQuery<{ cartLinesUpdate: { cart: ShopifyCart | null; userErrors: Array<{ message: string; code?: string | null }>; warnings: Array<{ message: string }> } }>(
+  const data = await storefrontQuery<{ cartLinesUpdate: ShopifyCartMutation }>(
     `mutation BeejCartLinesUpdate($cartId: ID!, $lines: [CartLineUpdateInput!]!) { cartLinesUpdate(cartId: $cartId, lines: $lines) { cart { ${CART_FIELDS} } userErrors { message code } warnings { message } } }`,
     { cartId, lines },
     buyerIp,
   );
+  return { ...data, cartLinesUpdate: normalizeCartMutation(data.cartLinesUpdate) };
 }
 
 export async function removeShopifyCartLines(cartId: string, lineIds: string[], buyerIp?: string | null) {
-  return storefrontQuery<{ cartLinesRemove: { cart: ShopifyCart | null; userErrors: Array<{ message: string; code?: string | null }>; warnings: Array<{ message: string }> } }>(
+  const data = await storefrontQuery<{ cartLinesRemove: ShopifyCartMutation }>(
     `mutation BeejCartLinesRemove($cartId: ID!, $lineIds: [ID!]!) { cartLinesRemove(cartId: $cartId, lineIds: $lineIds) { cart { ${CART_FIELDS} } userErrors { message code } warnings { message } } }`,
     { cartId, lineIds },
     buyerIp,
   );
+  return { ...data, cartLinesRemove: normalizeCartMutation(data.cartLinesRemove) };
 }

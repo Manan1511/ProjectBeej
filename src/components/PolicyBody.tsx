@@ -1,3 +1,5 @@
+import { SanitizedHtml } from "@/components/SanitizedHtml";
+
 export function PolicyBody({ body }: { body: string }) {
-  return <div className="policy-copy">{body.split(/\n{2,}/).map((paragraph, index) => <p key={index}>{paragraph.trim()}</p>)}</div>;
+  return <SanitizedHtml html={body} className="policy-copy" />;
 }

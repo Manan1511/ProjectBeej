@@ -62,7 +62,7 @@ export function CartPanel({ initialCart, shippingConfigured }: { initialCart: Sh
 
   if (!cart || cart.totalQuantity === 0) {
     return <div className="empty-cart">
-      <Image src="/assets/mc-runner.png" alt="" width={120} height={120} />
+      <Image src="/assets/squad-runner-hq.png" alt="" width={120} height={120} />
       <p className="eyebrow">Good things start small</p>
       <h2>Your bag is empty</h2>
       <p>Every great habit starts with a single seed.</p>

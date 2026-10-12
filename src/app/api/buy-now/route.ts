@@ -3,13 +3,14 @@ import { z } from "zod";
 import { normalizeQuantity } from "@/lib/commerce";
 import { requestBuyerIp } from "@/lib/request-ip";
 import { createBuyNowCart, trustedCheckoutUrl } from "@/lib/cart-actions";
-import { createShopifyCart } from "@/lib/storefront";
+import { createShopifyCart, getStorefrontMode } from "@/lib/storefront";
 
 export const dynamic = "force-dynamic";
 
 const buyNowSchema = z.object({ variantId: z.string().min(1).max(200), quantity: z.unknown().optional() });
 
 export async function POST(request: NextRequest) {
+  if (getStorefrontMode() === "preview") return NextResponse.json({ error: "Purchases are disabled while the storefront is in preview mode." }, { status: 503 });
   try {
     const body = buyNowSchema.parse(await request.json());
     const quantity = normalizeQuantity(body.quantity ?? 1);

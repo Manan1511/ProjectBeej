@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     title: product.title,
     description: product.description,
     ...(getPublicSiteUrl() ? { alternates: { canonical: `/products/${product.handle}` } } : {}),
-    openGraph: { title: `${product.title} — Project Beej`, description: product.description, ...(product.images[0]?.url.startsWith("https://") ? { images: [product.images[0].url] } : {}) },
+    openGraph: { title: `${product.title} | Project Beej`, description: product.description, ...(product.images[0]?.url.startsWith("https://") ? { images: [product.images[0].url] } : {}) },
   };
 }
 

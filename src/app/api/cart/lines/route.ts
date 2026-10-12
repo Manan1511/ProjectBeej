@@ -3,7 +3,7 @@ import { z } from "zod";
 import { normalizeQuantity, totalCartQuantity } from "@/lib/commerce";
 import { clearStoredCartId, readStoredCartId, storeCartId } from "@/lib/cart-cookie";
 import { requestBuyerIp } from "@/lib/request-ip";
-import { addShopifyCartLines, createShopifyCart, getShopifyCart, removeShopifyCartLines, updateShopifyCartLines } from "@/lib/storefront";
+import { addShopifyCartLines, createShopifyCart, getShopifyCart, getStorefrontMode, removeShopifyCartLines, updateShopifyCartLines } from "@/lib/storefront";
 import { withKeyedLock } from "@/lib/lock";
 import { appendCartLine, CartActionError } from "@/lib/cart-actions";
 
@@ -21,6 +21,7 @@ function mutationError(messages: Array<{ message: string }>) {
 }
 
 export async function POST(request: NextRequest) {
+  if (getStorefrontMode() === "preview") return NextResponse.json({ error: "Purchases are disabled while the storefront is in preview mode." }, { status: 503 });
   try {
     const parsed = addSchema.parse(await request.json());
     const quantity = normalizeQuantity(parsed.quantity ?? 1);
@@ -47,6 +48,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  if (getStorefrontMode() === "preview") return NextResponse.json({ error: "Purchases are disabled while the storefront is in preview mode." }, { status: 503 });
   try {
     const parsed = updateSchema.parse(await request.json());
     const quantity = normalizeQuantity(parsed.quantity);
@@ -76,6 +78,7 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  if (getStorefrontMode() === "preview") return NextResponse.json({ error: "Purchases are disabled while the storefront is in preview mode." }, { status: 503 });
   const lineId = request.nextUrl.searchParams.get("lineId");
   const cartId = await readStoredCartId();
   if (!lineId || !cartId) return errorResponse(new Error("That bag item could not be found."), 404);

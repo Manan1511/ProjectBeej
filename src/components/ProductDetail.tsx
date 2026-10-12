@@ -10,10 +10,10 @@ import { ProductGrid } from "@/components/ProductGrid";
 import { getBrowserCartKey, serializeCartWrite } from "@/components/cart-request";
 
 const fallbackSkins: Record<string, { tint: string; mascot: string; player: string }> = {
-  "peri-peri": { tint: "#F5A287", mascot: "/assets/cut-lifter.png", player: "The Lifter" },
-  cheese: { tint: "#FFD98E", mascot: "/assets/cut-skater.png", player: "The Skater" },
-  "himalayan-salt-pepper": { tint: "#F7B3BB", mascot: "/assets/cut-runner.png", player: "The Striker" },
-  pudina: { tint: "#B9DCA3", mascot: "/assets/cut-pickleball.png", player: "The Smasher" },
+  "peri-peri": { tint: "#F5A287", mascot: "/assets/squad-lifter-hq.png", player: "The Lifter" },
+  cheese: { tint: "#FFD98E", mascot: "/assets/squad-skater-hq.png", player: "The Skater" },
+  "himalayan-salt-pepper": { tint: "#F7B3BB", mascot: "/assets/squad-runner-hq.png", player: "The Striker" },
+  pudina: { tint: "#B9DCA3", mascot: "/assets/squad-pickleball-hq.png", player: "The Smasher" },
   "classic-makhana": { tint: "#C4D19B", mascot: "/assets/makhana-lotus.png", player: "The Original" },
 };
 
@@ -59,7 +59,7 @@ export function ProductDetail({ product, faqs, reviews, related }: { product: Be
         <div className="product-detail-grid">
           <div className="product-gallery">
             <div className="product-main-image" style={{ "--product-tint": skin.tint } as React.CSSProperties}>
-              {product.images[activeImage] ? <Image src={product.images[activeImage].url} alt={product.images[activeImage].alt} fill sizes="(max-width: 760px) 100vw, 54vw" unoptimized /> : <Image src={skin.mascot} alt="" fill sizes="(max-width: 760px) 100vw, 54vw" />}
+              {product.images[activeImage] ? <Image src={product.images[activeImage].url} alt={product.images[activeImage].alt} fill sizes="(max-width: 760px) 100vw, 54vw" unoptimized /> : <Image className="product-fallback-mascot" src={skin.mascot} alt="" fill sizes="(max-width: 760px) 100vw, 54vw" />}
             </div>
             <div className="product-thumbnails" aria-label="Product photos">
               {product.images.map((image, index) => <button key={image.url} type="button" onClick={() => setActiveImage(index)} aria-label={`Show product image ${index + 1}`} aria-pressed={activeImage === index}>
@@ -97,7 +97,7 @@ export function ProductDetail({ product, faqs, reviews, related }: { product: Be
 
         <section className="reviews-section">
           <div><span className="eyebrow">The snack squad</span><h2>Real notes from real snackers</h2></div>
-          {reviews.length ? <div className="review-grid">{reviews.map((review, index) => <article className="review-card" key={`${review.author}-${index}`}><span className="review-stars" aria-label={`${review.rating} out of 5 stars`}>{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span>{review.title ? <h3>{review.title}</h3> : null}<p>{review.body}</p><span>— {review.author}</span></article>)}</div> : <p className="review-empty">No approved reviews yet. Reviews will appear here after they’re added in Shopify.</p>}
+          {reviews.length ? <div className="review-grid">{reviews.map((review, index) => <article className="review-card" key={`${review.author}-${index}`}><span className="review-stars" aria-label={`${review.rating} out of 5 stars`}>{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span>{review.title ? <h3>{review.title}</h3> : null}<p>{review.body}</p><span>By {review.author}</span></article>)}</div> : <p className="review-empty">No approved reviews yet. Reviews will appear here after they’re added in Shopify.</p>}
         </section>
       </div>
       {related.length ? <section className="related-section"><div className="section-heading"><div><span className="eyebrow">Another round?</span><h2>You might also like</h2></div><Link className="text-link" href="/shop">Shop all snacks ↗</Link></div><ProductGrid products={related} /></section> : null}

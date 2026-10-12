@@ -9,10 +9,10 @@ import type { BeejProduct } from "@/lib/types";
 import { formatINR } from "@/lib/commerce";
 
 const skins: Record<string, { tint: string; mascot: string; player: string }> = {
-  "peri-peri": { tint: "#F5A287", mascot: "/assets/mc-lifter.png", player: "The Lifter" },
-  cheese: { tint: "#FFD98E", mascot: "/assets/mc-skater.png", player: "The Skater" },
-  "himalayan-salt-pepper": { tint: "#F7B3BB", mascot: "/assets/mc-runner.png", player: "The Striker" },
-  pudina: { tint: "#B9DCA3", mascot: "/assets/mc-pickleball.png", player: "The Smasher" },
+  "peri-peri": { tint: "#F5A287", mascot: "/assets/squad-lifter-hq.png", player: "The Lifter" },
+  cheese: { tint: "#FFD98E", mascot: "/assets/squad-skater-hq.png", player: "The Skater" },
+  "himalayan-salt-pepper": { tint: "#F7B3BB", mascot: "/assets/squad-runner-hq.png", player: "The Striker" },
+  pudina: { tint: "#B9DCA3", mascot: "/assets/squad-pickleball-hq.png", player: "The Smasher" },
   "classic-makhana": { tint: "#C4D19B", mascot: "/assets/makhana-lotus.png", player: "The Original" },
 };
 

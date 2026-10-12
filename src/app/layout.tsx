@@ -13,11 +13,11 @@ const siteUrl = getPublicSiteUrl();
 
 export const metadata: Metadata = {
   ...(siteUrl ? { metadataBase: new URL(siteUrl) } : {}),
-  title: { default: "Project Beej — Small seeds. Big feels.", template: "%s | Project Beej" },
-  description: "Wholesome snacks made from nature’s humblest ingredients — and seasoned like they mean it.",
+  title: { default: "Project Beej: Small seeds. Big feels.", template: "%s | Project Beej" },
+  description: "Wholesome snacks made from nature’s humblest ingredients, seasoned like they mean it.",
   applicationName: "Project Beej",
-  openGraph: { type: "website", siteName: "Project Beej", title: "Project Beej — Small seeds. Big feels.", description: "Wholesome snacks made from nature’s humblest ingredients — and seasoned like they mean it.", ...(siteUrl ? { images: ["/assets/pudina-pop.jpg"] } : {}) },
-  twitter: { card: "summary_large_image", title: "Project Beej — Small seeds. Big feels.", description: "Wholesome snacks made from nature’s humblest ingredients — and seasoned like they mean it.", ...(siteUrl ? { images: ["/assets/pudina-pop.jpg"] } : {}) },
+  openGraph: { type: "website", siteName: "Project Beej", title: "Project Beej: Small seeds. Big feels.", description: "Wholesome snacks made from nature’s humblest ingredients, seasoned like they mean it.", ...(siteUrl ? { images: ["/assets/pudina-pop.jpg"] } : {}) },
+  twitter: { card: "summary_large_image", title: "Project Beej: Small seeds. Big feels.", description: "Wholesome snacks made from nature’s humblest ingredients, seasoned like they mean it.", ...(siteUrl ? { images: ["/assets/pudina-pop.jpg"] } : {}) },
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#3A4229" };

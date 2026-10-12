@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { readStoredCartId, clearStoredCartId } from "@/lib/cart-cookie";
 import { requestBuyerIp } from "@/lib/request-ip";
-import { getShopifyCart } from "@/lib/storefront";
+import { getShopifyCart, getStorefrontMode } from "@/lib/storefront";
 import { trustedCheckoutUrl } from "@/lib/cart-actions";
 
 export const dynamic = "force-dynamic";
 
 export async function POST() {
+  if (getStorefrontMode() === "preview") return NextResponse.json({ error: "Purchases are disabled while the storefront is in preview mode." }, { status: 503 });
   try {
     const cartId = await readStoredCartId();
     if (!cartId) return NextResponse.json({ error: "Your bag is empty." }, { status: 409 });

@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
 import { BannerSlider } from "@/components/BannerSlider";
+import { HeroStripes } from "@/components/HeroStripes";
 import { NewsletterForm } from "@/components/NewsletterForm";
 import { ProductGrid } from "@/components/ProductGrid";
 import { getProducts, getSiteSettings } from "@/lib/storefront";
@@ -11,7 +12,7 @@ import { getPublicSiteUrl } from "@/lib/site-url";
 
 export const metadata: Metadata = {
   title: "Small seeds. Big feels.",
-  description: "Wholesome snacks made from nature’s humblest ingredients — and seasoned like they mean it.",
+  description: "Wholesome snacks made from nature’s humblest ingredients, seasoned like they mean it.",
   ...(getPublicSiteUrl() ? { alternates: { canonical: "/" } } : {}),
 };
 
@@ -34,8 +35,15 @@ async function homeData(): Promise<{ products: BeejProduct[]; settings: Awaited<
     getSiteSettings(buyerIp),
     getProducts(buyerIp).catch(() => []),
   ]);
-  const products = settings.featuredHandles?.length
-    ? [...productResult].sort((a, b) => settings.featuredHandles!.indexOf(a.handle) - settings.featuredHandles!.indexOf(b.handle))
+  const featuredHandles = settings.featuredHandles;
+  const products = featuredHandles?.length
+    ? [...productResult].sort((a, b) => {
+      const rank = (handle: string) => {
+        const index = featuredHandles.indexOf(handle);
+        return index === -1 ? featuredHandles.length : index;
+      };
+      return rank(a.handle) - rank(b.handle);
+    })
     : productResult;
   return { settings, products: products.slice(0, 5) };
 }
@@ -45,19 +53,28 @@ export default async function HomePage() {
   return (
     <main id="main-content">
       <section className="hero-section">
-        <div className="hero-stripes" aria-hidden="true" />
+        <HeroStripes />
         <div className="hero-inner">
           <div className="hero-copy">
             <span className="hero-eyebrow"><i /> {settings.homeCopy?.heroEyebrow || "Light · Crunchy · Healthy"}</span>
             <h1>{settings.homeCopy?.heroTitleLineOne || "Small seeds."}<br /><span>{settings.homeCopy?.heroTitleLineTwo || "Big feels."}</span></h1>
-            <p>{settings.homeCopy?.heroDescription || "Wholesome snacks made from nature’s humblest ingredients — and seasoned like they mean it."}</p>
+            <p>{settings.homeCopy?.heroDescription || "Wholesome snacks made from nature’s humblest ingredients, seasoned like they mean it."}</p>
             <div className="hero-actions"><Link className="button button-sage" href="/shop">{settings.homeCopy?.heroShopLabel || "Shop now"}</Link><Link className="button button-hero-outline" href="/about">{settings.homeCopy?.heroStoryLabel || "Our story"}</Link></div>
           </div>
           <BannerSlider settings={settings} />
         </div>
       </section>
 
-      <div className="benefit-ribbon" aria-label="What Beej brings to your snack break"><span>Small seeds</span><i /> <span>Bold flavours</span><i /> <span>Big feels</span><i /> <span>Growing with purpose</span></div>
+      <div className="benefit-ribbon" role="region" aria-label="What Beej brings to your snack break. Focus here or hover to pause the scrolling text." tabIndex={0}>
+        <span className="sr-only">Small seeds, bold flavours, big feels, growing with purpose.</span>
+        <div className="benefit-ribbon-track" aria-hidden="true">
+          {[0, 1].map((copy) => (
+            <div className="benefit-ribbon-group" key={copy}>
+              <span>Small seeds</span><i /><span>Bold flavours</span><i /><span>Big feels</span><i /><span>Growing with purpose</span><i />
+            </div>
+          ))}
+        </div>
+      </div>
 
       <section className="seed-quote">
         <Image src="/assets/seed.png" alt="" width={58} height={58} />
@@ -81,7 +98,7 @@ export default async function HomePage() {
       <section className="squad-section">
         <div className="section-heading"><div><span className="eyebrow">Packed with personality</span><h2>Snacking is a sport.</h2></div><Link className="text-link" href="/shop">Meet the squad ↗</Link></div>
         <div className="squad-grid">
-          {[{ img: "squad-lifter.png", name: "The Lifter", sport: "Peri Peri" }, { img: "squad-skater.png", name: "The Skater", sport: "Cheese" }, { img: "squad-runner.png", name: "The Striker", sport: "Himalayan Salt & Pepper" }, { img: "squad-pickleball.png", name: "The Smasher", sport: "Pudina" }].map((member) => <article key={member.name}><div><Image src={`/assets/${member.img}`} alt={`${member.name} mascot`} fill sizes="(max-width: 760px) 50vw, 25vw" /></div><span>{member.name}</span><h3>{member.sport}</h3></article>)}
+          {[{ img: "squad-lifter-hq.png", name: "The Lifter", sport: "Peri Peri" }, { img: "squad-skater-hq.png", name: "The Skater", sport: "Cheese" }, { img: "squad-runner-hq.png", name: "The Striker", sport: "Himalayan Salt & Pepper" }, { img: "squad-pickleball-hq.png", name: "The Smasher", sport: "Pudina" }].map((member) => <article key={member.name}><div><Image src={`/assets/${member.img}`} alt={`${member.name} mascot`} fill sizes="(max-width: 760px) 50vw, 25vw" /></div><span>{member.name}</span><h3>{member.sport}</h3></article>)}
         </div>
       </section>
 

@@ -51,7 +51,7 @@ The app reads live content without a build-time snapshot. Shopify changes normal
     "heroEyebrow": "Light · Crunchy · Healthy",
     "heroTitleLineOne": "Small seeds.",
     "heroTitleLineTwo": "Big feels.",
-    "heroDescription": "Wholesome snacks made from nature’s humblest ingredients — and seasoned like they mean it.",
+    "heroDescription": "Wholesome snacks made from nature’s humblest ingredients, seasoned like they mean it.",
     "heroShopLabel": "Shop now",
     "heroStoryLabel": "Our story",
     "shopEyebrow": "Meet your new favourites",

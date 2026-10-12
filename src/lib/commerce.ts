@@ -70,7 +70,7 @@ export function readCartCookie(value: string | undefined): string | null {
 
 export function formatINR(amount: string | number): string {
   const value = typeof amount === "string" ? Number(amount) : amount;
-  if (!Number.isFinite(value) || value < 0) return "—";
+  if (!Number.isFinite(value) || value < 0) return "Price unavailable";
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",

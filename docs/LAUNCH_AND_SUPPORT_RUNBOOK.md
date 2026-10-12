@@ -41,8 +41,8 @@ Use a merchant-approved test method and prevent test orders from reaching dispat
 
 Record the time, affected URL, device/browser, product/variant, Shopify order number if one exists, last successful step, and a redacted error message. Never include tokens, full payment data, or customer address in a support ticket.
 
-- **P1 — checkout or payment failure, wrong charged total, or order/payment mismatch:** alert the merchant promptly, pause purchase actions using the preview switch if needed, check Netlify and Shopify/Razorpay status, and reconcile the Shopify order before retrying.
-- **P2 — one product, collection, or content issue:** verify product publication, stock, metafield JSON, image URL, and product handle in Shopify; correct the source data and reload the storefront.
-- **P3 — copy/layout issue without purchase impact:** capture the affected viewport and URL, check whether it comes from Shopify-managed content or the deployed build, then schedule the smallest fix.
+- **P1: Checkout or payment failure, wrong charged total, or order/payment mismatch.** Alert the merchant promptly, pause purchase actions using the preview switch if needed, check Netlify and Shopify/Razorpay status, and reconcile the Shopify order before retrying.
+- **P2: One product, collection, or content issue.** Verify product publication, stock, metafield JSON, image URL, and product handle in Shopify; correct the source data and reload the storefront.
+- **P3: Copy or layout issue without purchase impact.** Capture the affected viewport and URL, check whether it comes from Shopify-managed content or the deployed build, then schedule the smallest fix.
 
 After resolution, verify the original flow and one neighboring route, record the cause and fix, and ask the merchant to confirm any payment, refund, policy, or fulfillment decision. Do not activate COD or Amazon MCF during incident recovery.
