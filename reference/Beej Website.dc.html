@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="ext-resource-dependency" content="assets/peri-drop.jpg" data-resource-id="a-peri-drop">
+<meta name="ext-resource-dependency" content="assets/peri-flatlay.jpg" data-resource-id="a-peri-flatlay">
+<meta name="ext-resource-dependency" content="assets/cheese-drop.jpg" data-resource-id="a-cheese-drop">
+<meta name="ext-resource-dependency" content="assets/cheese-table.jpg" data-resource-id="a-cheese-table">
+<meta name="ext-resource-dependency" content="assets/himalayan-reach.jpg" data-resource-id="a-himalayan-reach">
+<meta name="ext-resource-dependency" content="assets/himalayan-hand.jpg" data-resource-id="a-himalayan-hand">
+<meta name="ext-resource-dependency" content="assets/himalayan-window.jpg" data-resource-id="a-himalayan-window">
+<meta name="ext-resource-dependency" content="assets/himalayan-yoga.jpg" data-resource-id="a-himalayan-yoga">
+<meta name="ext-resource-dependency" content="assets/pudina-hands.jpg" data-resource-id="a-pudina-hands">
+<meta name="ext-resource-dependency" content="assets/pudina-pop.jpg" data-resource-id="a-pudina-pop">
+<meta name="ext-resource-dependency" content="assets/makhana-pond.jpg" data-resource-id="a-makhana-pond">
+<meta name="ext-resource-dependency" content="assets/makhana-lotus.jpg" data-resource-id="a-makhana-lotus">
+<meta name="ext-resource-dependency" content="assets/pack.jpg" data-resource-id="a-pack">
+<meta name="ext-resource-dependency" content="assets/mc-lifter.png" data-resource-id="a-mc-lifter">
+<meta name="ext-resource-dependency" content="assets/mc-skater.png" data-resource-id="a-mc-skater">
+<meta name="ext-resource-dependency" content="assets/mc-runner.png" data-resource-id="a-mc-runner">
+<meta name="ext-resource-dependency" content="assets/mc-pickleball.png" data-resource-id="a-mc-pickleball">
+<meta name="ext-resource-dependency" content="assets/logo-wordmark.png" data-resource-id="a-logo-wordmark">
+<meta name="ext-resource-dependency" content="assets/seed.jpg" data-resource-id="a-seed">
+<meta name="ext-resource-dependency" content="assets/seed-sprout.mp4" data-resource-id="a-seed-sprout">
+<meta name="ext-resource-dependency" content="assets/seedlings.jpg" data-resource-id="a-seedlings">
+<meta name="ext-resource-dependency" content="assets/leaves-dark.jpg" data-resource-id="a-leaves-dark">
+<meta name="ext-resource-dependency" content="assets/sprout-single.jpg" data-resource-id="a-sprout-single">
+<template id="__bundler_thumbnail" data-bg-color="#3A4229"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#3A4229"></rect><ellipse cx="50" cy="52" rx="13" ry="18" fill="#C4D19B"></ellipse><path d="M50 34 C50 26 56 22 62 22" stroke="#C4D19B" stroke-width="3" fill="none" stroke-linecap="round"></path></svg></template>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script>
+(function(){
+  if (window.__beejAssetPatch) return; window.__beejAssetPatch = true;
+  var fix = function(v){ if (typeof v !== 'string' || !/^(\.\/)?assets\//.test(v)) return v; var r = window.__resources; var k = 'a-' + v.replace(/^.*\//,'').replace(/\.\w+$/,''); return (r && r[k]) || v; };
+  var sa = Element.prototype.setAttribute;
+  Element.prototype.setAttribute = function(n, v){ if (n === 'src' || n === 'poster' || n === 'href') v = fix(v); return sa.call(this, n, v); };
+  [[HTMLImageElement,'src'],[HTMLMediaElement,'src'],[HTMLVideoElement,'poster']].forEach(function(p){ var d = Object.getOwnPropertyDescriptor(p[0].prototype, p[1]); if (d && d.set) Object.defineProperty(p[0].prototype, p[1], { configurable: true, enumerable: d.enumerable, get: d.get, set: function(v){ d.set.call(this, fix(v)); } }); });
+})();
+</script>
+<script src="./beej-data.js"></script>
+<style>
+@font-face{font-family:'IvyOra Display';src:local('IvyOra Display'),local('IvyOraDisplay-Regular')}
+@font-face{font-family:'Neue Haas Display Pro';src:local('Neue Haas Display Pro'),local('NeueHaasDisplay-Roman')}
+body{margin:0;background:#F6F1E4;font-family:'Neue Haas Display Pro','Neue Haas Grotesk Display Pro','Hanken Grotesk',sans-serif;color:#2B3220;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+a{color:#2B3220;text-decoration:none}
+a:hover{color:#5E6B45}
+img{display:block}
+@keyframes beejSpin{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes beejFloatA{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes beejFloatB{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
+@keyframes beejMarquee{to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="min-height:100vh;background:#F6F1E4">
+  <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}"><dc-import name="Beej Home" hint-size="100%,100vh"></dc-import></sc-if>
+  <sc-if value="{{ isShop }}" hint-placeholder-val="{{ false }}"><dc-import name="Beej Shop" hint-size="100%,100vh"></dc-import></sc-if>
+  <sc-if value="{{ isProduct }}" hint-placeholder-val="{{ false }}"><dc-import name="Beej Product" hint-size="100%,100vh"></dc-import></sc-if>
+  <sc-if value="{{ isAbout }}" hint-placeholder-val="{{ false }}"><dc-import name="Beej About" hint-size="100%,100vh"></dc-import></sc-if>
+  <sc-if value="{{ isCart }}" hint-placeholder-val="{{ false }}"><dc-import name="Beej Cart" hint-size="100%,100vh"></dc-import></sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { page: this._parse() };
+  _parse() { const m = location.hash.match(/^#\/(home|shop|product|about|cart)/); return m ? m[1] : 'home'; }
+  componentDidMount() {
+    this._click = e => {
+      const a = e.target.closest && e.target.closest('a[href]'); if (!a) return;
+      const m = (a.getAttribute('href') || '').match(/Beej(?:%20| )(Home|Shop|Product|About|Cart)\.dc\.html(\?[^#]*)?(#[\w-]+)?$/);
+      if (!m) return;
+      e.preventDefault();
+      this._frag = m[3] || null;
+      const h = '#/' + m[1].toLowerCase() + (m[2] || '');
+      if (location.hash === h) this._go(); else location.hash = h;
+    };
+    this._go = () => {
+      this.setState({ page: null });
+      clearTimeout(this._t1); clearTimeout(this._t2);
+      this._t1 = setTimeout(() => {
+        this.setState({ page: this._parse() });
+        window.scrollTo(0, 0);
+        const f = this._frag; this._frag = null;
+        if (f) this._t2 = setTimeout(() => { const el = document.querySelector(f); el && window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 80); }, 500);
+      }, 30);
+    };
+    document.addEventListener('click', this._click, true);
+    window.addEventListener('hashchange', this._go);
+  }
+  componentWillUnmount() { document.removeEventListener('click', this._click, true); window.removeEventListener('hashchange', this._go); }
+  renderVals() {
+    const p = this.state.page;
+    return { isHome: p === 'home', isShop: p === 'shop', isProduct: p === 'product', isAbout: p === 'about', isCart: p === 'cart' };
+  }
+}
+</script>
+</body>
+</html>

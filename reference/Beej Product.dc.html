@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="./beej-data.js"></script>
+<style>
+@font-face{font-family:'IvyOra Display';src:local('IvyOra Display'),local('IvyOraDisplay-Regular')}
+@font-face{font-family:'Neue Haas Display Pro';src:local('Neue Haas Display Pro'),local('NeueHaasDisplay-Roman')}
+body{margin:0;background:#F6F1E4;font-family:'Neue Haas Display Pro','Neue Haas Grotesk Display Pro','Hanken Grotesk',sans-serif;color:#2B3220;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+a{color:#2B3220;text-decoration:none}
+a:hover{color:#5E6B45}
+img{display:block}
+</style>
+</helmet>
+<div style="min-height:100vh;background:#F6F1E4">
+  <dc-import name="Beej Header" active="shop" hint-size="100%,100px" style="position:sticky;top:calc(-1 * var(--beej-bar-h, 38px));z-index:50"></dc-import>
+
+  <section data-screen-label="Product detail" style="padding:24px clamp(20px,5vw,64px) clamp(56px,7vw,96px)">
+    <div style="max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:24px">
+      <div style="display:flex;gap:8px;font-size:14px;color:#6B6F5C;flex-wrap:wrap">
+        <a href="Beej%20Shop.dc.html" style="color:#6B6F5C">Shop</a><span>/</span><a href="{{ lineHref }}" style="color:#6B6F5C">{{ line }}</a><span>/</span><span style="color:#2B3220;font-weight:600">{{ name }}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));gap:clamp(32px,5vw,64px);align-items:start">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="aspect-ratio:1/1;border-radius:28px;overflow:hidden;background:{{ tint }}">
+            {{ mainPic }}
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">
+            <sc-for list="{{ thumbs }}" as="t" hint-placeholder-count="2">
+              <button onClick="{{ t.pick }}" style="padding:0;cursor:pointer;aspect-ratio:1/1;border-radius:16px;overflow:hidden;border:3px solid {{ t.border }};background:#E6E0CC">
+                {{ t.pic }}
+              </button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:22px">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6E7D4E">{{ line }}</span>
+            <h1 style="margin:0;font-family:'IvyOra Display','DM Serif Display',serif;font-weight:400;font-size:clamp(37.4px,4.7vw,62.4px);line-height:1.06;text-wrap:balance;letter-spacing:-0.01em;font-kerning:normal">{{ name }}</h1>
+            <div style="display:flex;align-items:baseline;gap:4px 12px;flex-wrap:wrap">
+              <span style="font-size:30px;font-weight:800">{{ price }}</span>
+              <span style="font-size:15px;color:#6B6F5C">{{ size }} · Inclusive of all taxes</span>
+            </div>
+          </div>
+          <p style="margin:0;font-size:18px;line-height:1.55;max-width:520px;text-wrap:pretty">{{ desc }}</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <sc-for list="{{ notes }}" as="n" hint-placeholder-count="3">
+              <span style="background:{{ tint }};font-weight:700;font-size:14px;padding:8px 14px;border-radius:999px">{{ n }}</span>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+            <div style="display:flex;align-items:center;border:2px solid #2B3220;border-radius:999px;overflow:hidden">
+              <button onClick="{{ dec }}" style="width:48px;height:50px;border:none;background:transparent;font-size:22px;cursor:pointer;color:#2B3220;font-family:'Neue Haas Display Pro','Neue Haas Grotesk Display Pro','Hanken Grotesk',sans-serif">−</button>
+              <span style="min-width:32px;text-align:center;font-weight:800;font-size:17px">{{ qty }}</span>
+              <button onClick="{{ inc }}" style="width:48px;height:50px;border:none;background:transparent;font-size:22px;cursor:pointer;color:#2B3220;font-family:'Neue Haas Display Pro','Neue Haas Grotesk Display Pro','Hanken Grotesk',sans-serif">+</button>
+            </div>
+            <button onClick="{{ add }}" style="flex:1;min-width:min(100%,180px);height:54px;border:none;cursor:pointer;background:#2B3220;color:#F6F1E4;font-family:'Neue Haas Display Pro','Neue Haas Grotesk Display Pro','Hanken Grotesk',sans-serif;font-weight:800;font-size:16px;letter-spacing:.5px;text-transform:uppercase;border-radius:999px" style-hover="background:#3A4229">{{ addLabel }}</button>
+          </div>
+          <a href="Beej%20Cart.dc.html" onClick="{{ buyNow }}" style="text-align:center;height:54px;line-height:50px;border:2px solid #2B3220;font-weight:800;font-size:16px;letter-spacing:.5px;text-transform:uppercase;border-radius:999px" style-hover="background:#C4D19B;color:#2B3220">Buy now</a>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:10px;border-top:1px solid #DCD5C0;padding-top:22px">
+            <sc-for list="{{ claims }}" as="c" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px"><img src="assets/seed.jpg" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover"></img>{{ c }}</div>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;border-top:1px solid #DCD5C0">
+            <sc-for list="{{ panels }}" as="d" hint-placeholder-count="3">
+              <div style="border-bottom:1px solid #DCD5C0">
+                <button onClick="{{ d.toggle }}" style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:18px 0;border:none;background:transparent;cursor:pointer;font-family:'Neue Haas Display Pro','Neue Haas Grotesk Display Pro','Hanken Grotesk',sans-serif;font-weight:700;font-size:16px;color:#2B3220;text-align:left">{{ d.title }}<span style="font-size:22px;font-weight:400">{{ d.sign }}</span></button>
+                <sc-if value="{{ d.open }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding:0 0 18px;font-size:15px;line-height:1.6;color:#55594A">
+                    <sc-if value="{{ d.isTable }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:grid;grid-template-columns:1fr auto;gap:6px 24px;max-width:360px">
+                        <sc-for list="{{ d.rows }}" as="r" hint-placeholder-count="4">
+                          <span>{{ r.k }}</span><span style="font-weight:700;color:#2B3220;text-align:right">{{ r.v }}</span>
+                        </sc-for>
+                      </div>
+                      <span style="display:block;margin-top:8px;font-size:13px">Per 100g</span>
+                    </sc-if>
+                    <sc-if value="{{ d.isText }}" hint-placeholder-val="{{ true }}">{{ d.body }}</sc-if>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <sc-if value="{{ hasMascot }}" hint-placeholder-val="{{ true }}">
+    <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));background:{{ mascotBg }}">
+      <div style="min-height:clamp(280px,60vw,380px);position:relative">
+        {{ mascotPic }}
+      </div>
+      <div style="background:#2B3220;color:#F6F1E4;display:flex;flex-direction:column;justify-content:center;gap:16px;padding:clamp(40px,6vw,80px) clamp(20px,5vw,64px)">
+        <span style="font-weight:600;font-size:14px;letter-spacing:1px;text-transform:uppercase;color:#C4D19B">Packed with personality</span>
+        <h2 style="margin:0;font-family:'IvyOra Display','DM Serif Display',serif;font-weight:400;font-size:clamp(34.3px,3.9vw,56.2px);line-height:1.06;letter-spacing:-0.01em;font-kerning:normal">Meet {{ mascotName }}</h2>
+        <p style="margin:0;max-width:420px;font-size:17px;line-height:1.55;color:#E4E6D4">Every Beej flavour has its own character on the jar. Collect the whole squad.</p>
+      </div>
+    </section>
+  </sc-if>
+
+  <section style="padding:clamp(56px,7vw,96px) clamp(20px,5vw,64px)">
+    <div style="max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:28px">
+      <h2 style="margin:0;font-family:'IvyOra Display','DM Serif Display',serif;font-weight:400;font-size:clamp(31.2px,3.9vw,49.9px);line-height:1.06;letter-spacing:-0.01em;font-kerning:normal">You might also like</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));gap:28px 20px">
+        <sc-for list="{{ related }}" as="r" hint-placeholder-count="4">
+          <dc-import name="Beej Product Card" pid="{{ r }}" hint-size="100%,440px"></dc-import>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <dc-import name="Beej Footer" hint-size="100%,320px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { img: 0, qty: 1, open: 'about', added: false };
+  componentDidMount(){this._b=()=>this.forceUpdate();window.addEventListener('beej-ready',this._b);this._b()}
+  componentWillUnmount(){window.removeEventListener('beej-ready',this._b);clearTimeout(this._t)}
+  renderVals() {
+    const D = window.BeejData;
+    if (!D) return { thumbs: [], notes: [], claims: [], panels: [], related: [], hasMascot: false };
+    const id = D.params().get('id') || this.props.pid || 'peri';
+    const p = D.byId(id) || D.products[0];
+    const { img, qty, open } = this.state;
+    const panelsRaw = [
+      { k: 'about', title: 'Ingredients', body: p.ingredients || 'Roasted makhana (popped lotus seeds) and seasoning. Full ingredient list on the pack.' },
+      p.nutrition ? { k: 'nut', title: 'Nutrition', rows: p.nutrition.map(([k, v]) => ({ k, v })) } : null,
+      { k: 'store', title: 'Storage', body: D.info.storage },
+      { k: 'allergen', title: 'Allergen information', body: D.info.allergen }
+    ].filter(Boolean);
+    return {
+      name: p.name, line: p.line, size: p.size, desc: p.desc, tint: p.tint, notes: p.notes, claims: p.claims,
+      lineHref: 'Beej%20Shop.dc.html?line=' + encodeURIComponent(p.line),
+      price: D.money(p.price * qty),
+      mainPic: React.createElement('img', { src: p.images[img] || p.images[0], alt: p.name, style: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' } }),
+      thumbs: p.images.map((src, i) => ({ pic: React.createElement('img', { src, alt: '', style: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' } }), border: i === img ? '#2B3220' : 'transparent', pick: () => this.setState({ img: i }) })),
+      qty,
+      dec: () => this.setState(s => ({ qty: Math.max(1, s.qty - 1) })),
+      inc: () => this.setState(s => ({ qty: s.qty + 1 })),
+      addLabel: this.state.added ? 'Added to bag ✓' : 'Add to bag',
+      add: () => { D.cart.add(p.id, qty); this.setState({ added: true }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ added: false }), 1600); },
+      buyNow: () => D.cart.add(p.id, qty),
+      panels: panelsRaw.map(d => ({ ...d, isTable: !!d.rows, isText: !d.rows, open: open === d.k, sign: open === d.k ? '−' : '+', toggle: () => this.setState({ open: open === d.k ? null : d.k }) })),
+      hasMascot: !!p.mascot, mascotPic: p.mascot ? React.createElement('img', { src: p.mascot, alt: p.mascotName, style: { position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: '84%', height: '84%', maxWidth: '380px', maxHeight: '300px', objectFit: 'contain', filter: 'drop-shadow(0 14px 24px rgba(0,0,0,.2))' } }) : null, mascotName: p.mascotName, mascotBg: p.mascotBg,
+      related: D.products.filter(x => x.id !== p.id).slice(0, 4).map(x => x.id)
+    };
+  }
+}
+</script>
+</body>
+</html>

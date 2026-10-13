@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { emitCommerceEvent } from "@/lib/tracking-client";
 
 export function NewsletterForm() {
   const [message, setMessage] = useState("");
@@ -20,9 +21,11 @@ export function NewsletterForm() {
       });
       const result = await response.json() as { success?: boolean; error?: string };
       if (!response.ok) throw new Error(result.error || "Sign-up is unavailable right now.");
+      emitCommerceEvent({ name: "newsletter_signup", method: "email" });
       form.reset();
       setMessage("You’re in. Watch this space 🌱");
     } catch (error) {
+      emitCommerceEvent({ name: "commerce_error", action: "newsletter_signup" });
       setMessage(error instanceof Error ? error.message : "Sign-up is unavailable right now.");
     } finally {
       setBusy(false);

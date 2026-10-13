@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<script src="./image-slot.js"></script>
+<style>
+body{margin:0;background:#FFF4E2;font-family:'Bricolage Grotesque',sans-serif;color:#1B1B3A;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+a{color:#1B1B3A;text-decoration:none}
+a:hover{color:#E8432E}
+</style>
+</helmet>
+<div style="min-height:100vh;background:#FFF4E2">
+  <sc-if value="{{ showAnnouncement }}" hint-placeholder-val="{{ true }}">
+    <div style="background:#FFC93C;color:#1B1B3A;text-align:center;font-weight:600;font-size:14px;padding:9px 16px">Free delivery on bundles over £20 — snack responsibly ✦</div>
+  </sc-if>
+
+  <section style="position:relative;overflow:hidden;background:#E8432E;color:#FFF4E2">
+    <sc-if value="{{ showStripes }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute;inset:-40%;background:repeating-conic-gradient(from 0deg at 62% 50%, #E8432E 0deg 9deg, #D2341F 9deg 18deg);pointer-events:none"></div>
+    </sc-if>
+    <nav style="position:relative;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;padding:18px clamp(20px,5vw,64px)">
+      <div style="display:flex;gap:24px;font-weight:600;font-size:15px;flex-wrap:wrap">
+        <a href="#shop" style="color:#FFF4E2">Shop</a>
+        <a href="#story" style="color:#FFF4E2">Our Story</a>
+      </div>
+      <div style="font-family:Anton,sans-serif;font-size:30px;letter-spacing:1px;background:#FFF4E2;color:#E8432E;padding:2px 14px;border-radius:10px;transform:rotate(-3deg)">CRUNCHO</div>
+      <div style="display:flex;gap:20px;justify-content:flex-end;align-items:center;font-weight:600;font-size:15px">
+        <a href="#find" style="color:#FFF4E2">Find Us</a>
+        <div style="display:flex;align-items:center;gap:6px;border:2px solid #FFF4E2;border-radius:999px;padding:4px 12px">Bag <span style="background:#FFF4E2;color:#E8432E;border-radius:999px;padding:0 7px;font-size:13px">0</span></div>
+      </div>
+    </nav>
+    <div style="position:relative;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:32px;align-items:center;max-width:1280px;margin:0 auto;padding:24px clamp(20px,5vw,64px) 0">
+      <div style="display:flex;flex-direction:column;gap:22px;padding-bottom:48px">
+        <div style="display:flex;gap:8px;align-items:center;font-weight:600;font-size:15px">4.9 <span style="color:#FFC93C;letter-spacing:2px">★★★★★</span> 3,104 reviews</div>
+        <h1 style="margin:0;font-family:Anton,sans-serif;font-weight:400;font-size:clamp(64px,9vw,128px);line-height:.9;text-transform:uppercase;text-wrap:balance">Crunch first.<br>Think later.</h1>
+        <p style="margin:0;max-width:420px;font-size:19px;line-height:1.45;text-wrap:pretty">Oven-baked chickpea crisps with loud flavours and a short ingredient list. Snacking, minus the guilt trip.</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <a href="#shop" style="background:#FFF4E2;color:#1B1B3A;font-weight:800;padding:14px 28px;border-radius:999px;font-size:16px;letter-spacing:.5px;text-transform:uppercase" style-hover="background:#FFC93C;color:#1B1B3A">Shop now</a>
+          <a href="#story" style="border:2px solid #FFF4E2;color:#FFF4E2;font-weight:800;padding:12px 26px;border-radius:999px;font-size:16px;letter-spacing:.5px;text-transform:uppercase" style-hover="background:rgba(255,244,226,.12);color:#FFF4E2">Our story</a>
+        </div>
+      </div>
+      <div style="position:relative;height:clamp(360px,44vw,560px);align-self:end">
+        <image-slot id="hero-packs" shape="rect" fit="contain" placeholder="Hero: hands holding two snack packs (transparent PNG)"></image-slot>
+      </div>
+    </div>
+  </section>
+
+  <section style="background:#FFF4E2;padding:72px clamp(20px,5vw,64px) 40px;text-align:center">
+    <p style="margin:0 auto;max-width:720px;font-size:clamp(22px,2.6vw,30px);line-height:1.35;font-weight:600;color:#1B1B3A;text-wrap:balance">“Every bag sold plants a tree with our reforestation partners. Crunch responsibly.”</p>
+    <div style="display:flex;justify-content:center;gap:clamp(24px,5vw,56px);flex-wrap:wrap;margin-top:32px;font-weight:800;font-size:20px;color:#8A8399;letter-spacing:.5px">
+      <span>THE GROCER</span><span style="font-family:Georgia,serif;font-style:italic;font-weight:400">Foodism</span><span>STYLIST</span><span style="font-family:Georgia,serif;font-weight:400">The Standard</span>
+    </div>
+  </section>
+
+  <section id="shop" style="padding:32px clamp(20px,5vw,64px) 88px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:20px;max-width:1180px;margin:0 auto">
+      <sc-for list="{{ categories }}" as="c" hint-placeholder-count="4">
+        <a href="#shop" style="display:flex;flex-direction:column;gap:12px;text-align:center;color:#1B1B3A" style-hover="color:#E8432E">
+          <div style="height:200px;border-radius:18px;overflow:hidden;background:#F3D9C4">
+            <image-slot id="{{ c.id }}" shape="rect" placeholder="{{ c.ph }}"></image-slot>
+          </div>
+          <div style="font-family:Anton,sans-serif;font-size:24px;text-transform:uppercase;letter-spacing:.5px">{{ c.name }}</div>
+          <div style="font-size:14px;margin-top:-8px;color:#5A5470">{{ c.sub }}</div>
+        </a>
+      </sc-for>
+    </div>
+  </section>
+
+  <section id="story" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));background:#BDE8D4">
+    <div style="display:flex;flex-direction:column;justify-content:center;gap:24px;padding:clamp(40px,7vw,96px) clamp(20px,5vw,64px)">
+      <h2 style="margin:0;font-family:Anton,sans-serif;font-weight:400;font-size:clamp(48px,6vw,84px);line-height:.95;text-transform:uppercase;color:#1B1B3A;text-wrap:balance">Snacks with a <span style="color:#E8432E">big</span> mouth.</h2>
+      <p style="margin:0;max-width:440px;font-size:18px;line-height:1.5;text-wrap:pretty">We roast chickpeas until they snap, then hit them with seasonings that don't whisper. High protein, high fibre, zero palm oil — and a crunch you can hear across the office.</p>
+      <a href="#shop" style="align-self:flex-start;border:2px solid #1B1B3A;font-weight:800;padding:12px 26px;border-radius:999px;font-size:15px;text-transform:uppercase;letter-spacing:.5px" style-hover="background:#1B1B3A;color:#BDE8D4">Shop now</a>
+    </div>
+    <div style="min-height:420px;position:relative">
+      <image-slot id="lifestyle" shape="rect" placeholder="Lifestyle: someone mid-crunch, bold background"></image-slot>
+    </div>
+  </section>
+
+  <section style="background:#FFC93C;padding:clamp(56px,8vw,104px) clamp(20px,5vw,64px);text-align:center">
+    <h2 style="margin:0 auto 56px;max-width:820px;font-family:Anton,sans-serif;font-weight:400;font-size:clamp(40px,5vw,68px);line-height:1;text-transform:uppercase;text-wrap:balance">What goes in the bag</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:40px;max-width:1080px;margin:0 auto">
+      <sc-for list="{{ pillars }}" as="p" hint-placeholder-count="3">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:14px">
+          <div style="width:72px;height:72px;border-radius:50%;background:#1B1B3A;color:#FFC93C;display:flex;align-items:center;justify-content:center;font-family:Anton,sans-serif;font-size:30px">{{ p.n }}</div>
+          <div style="font-family:Anton,sans-serif;font-size:26px;text-transform:uppercase">{{ p.title }}</div>
+          <p style="margin:0;max-width:280px;font-size:16px;line-height:1.5;text-wrap:pretty">{{ p.body }}</p>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <footer id="find" style="background:#1B1B3A;color:#FFF4E2;padding:56px clamp(20px,5vw,64px);display:flex;flex-wrap:wrap;gap:32px;justify-content:space-between;align-items:center">
+    <div style="font-family:Anton,sans-serif;font-size:40px;color:#E8432E">CRUNCHO</div>
+    <div style="display:flex;gap:28px;flex-wrap:wrap;font-weight:600">
+      <a href="#shop" style="color:#FFF4E2">Shop</a><a href="#story" style="color:#FFF4E2">Our Story</a><a href="#find" style="color:#FFF4E2">Stockists</a><a href="#find" style="color:#FFF4E2">Contact</a>
+    </div>
+    <div style="font-size:14px;color:#B9B4C8">© 2026 Cruncho Snacks</div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showAnnouncement&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;showStripes&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Hero&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      showAnnouncement: this.props.showAnnouncement ?? true,
+      showStripes: this.props.showStripes ?? true,
+      categories: [
+        { id: 'cat-crisps', name: 'Chickpea Crisps', sub: '4 loud flavours', ph: 'Crisp packs' },
+        { id: 'cat-puffs', name: 'Lentil Puffs', sub: '2 cheesy (vegan) ones', ph: 'Puff pack in hand' },
+        { id: 'cat-bundles', name: 'Bundles', sub: 'Stock up and save', ph: 'Bundle box' },
+        { id: 'cat-more', name: '& More!', sub: 'Read our story', ph: 'Founder / team portrait' }
+      ],
+      pillars: [
+        { n: '01', title: 'Real ingredients', body: 'Chickpeas, oil, seasoning. If you can\'t pronounce it, it\'s not in there.' },
+        { n: '02', title: 'Oven-baked', body: 'Never fried. 40% less fat than regular crisps, all of the snap.' },
+        { n: '03', title: 'Planet-positive', body: 'Compostable bags and a tree planted for every order we ship.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

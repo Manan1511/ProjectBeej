@@ -9,6 +9,7 @@ import { getProducts, getSiteSettings } from "@/lib/storefront";
 import type { BeejProduct } from "@/lib/types";
 import { requestBuyerIp } from "@/lib/request-ip";
 import { getPublicSiteUrl } from "@/lib/site-url";
+import { escapeJsonLd } from "@/lib/product-feeds";
 
 export const metadata: Metadata = {
   title: "Small seeds. Big feels.",
@@ -50,8 +51,11 @@ async function homeData(): Promise<{ products: BeejProduct[]; settings: Awaited<
 
 export default async function HomePage() {
   const { products, settings } = await homeData();
+  const siteUrl = getPublicSiteUrl();
+  const organization = siteUrl ? { "@context": "https://schema.org", "@type": "Organization", name: "Project Beej", url: siteUrl, ...(settings.instagramUrl ? { sameAs: [settings.instagramUrl] } : {}), ...(settings.contactEmail ? { email: settings.contactEmail } : {}) } : null;
   return (
     <main id="main-content">
+      {organization ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: escapeJsonLd(organization) }} /> : null}
       <section className="hero-section">
         <HeroStripes />
         <div className="hero-inner">
@@ -84,8 +88,8 @@ export default async function HomePage() {
 
       <section className="home-shop" id="shop">
         <div className="section-heading"><div><span className="eyebrow">{settings.homeCopy?.shopEyebrow || "Meet your new favourites"}</span><h2>{settings.homeCopy?.shopHeadingLead || "Pick your"} <em>{settings.homeCopy?.shopHeadingEmphasis || "player"}</em></h2></div><Link className="text-link" href="/shop">Shop all snacks ↗</Link></div>
-        <ProductGrid products={products} />
-        <div className="more-growing"><Image src="/assets/seed.png" alt="" width={54} height={54} /><div><h3>More sprouting soon</h3><p>New snacks are growing. Be first to taste them.</p></div><Link className="text-link" href="/search">Find your flavour ↗</Link></div>
+        <ProductGrid products={products} listName="Home featured" />
+        <div className="more-growing"><Image src="/assets/seed.png" alt="" width={54} height={54} /><div><h3>More sprouting soon</h3><p>New snacks are growing. Be first to taste them.</p></div><Link className="text-link" href="/shop#shop-search">Find your flavour ↗</Link></div>
       </section>
 
       <section className="story-band" id="story">

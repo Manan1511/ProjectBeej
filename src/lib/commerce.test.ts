@@ -9,6 +9,7 @@ import {
   readCartCookie,
   serializeCartCookie,
   totalCartQuantity,
+  toPublicShopifyCart,
 } from "./commerce";
 import { withKeyedLock } from "./lock";
 import { appendCartLine, createBuyNowCart, trustedCheckoutUrl } from "./cart-actions";
@@ -78,6 +79,18 @@ describe("private Shopify cart cookie", () => {
   it("drops malformed cookie values", () => {
     expect(readCartCookie(undefined)).toBeNull();
     expect(readCartCookie("https://example.com/cart")).toBeNull();
+  });
+
+  it("removes Shopify cart keys and checkout URLs before client serialization", () => {
+    const cart = {
+      id: "gid://shopify/Cart/abc?key=private-value",
+      checkoutUrl: "https://projectbeej-1686bmnd.myshopify.com/checkouts/abc?key=private-value",
+      totalQuantity: 0,
+      cost: { subtotalAmount: { amount: "0", currencyCode: "INR" }, totalAmount: { amount: "0", currencyCode: "INR" } },
+      lines: [],
+    } satisfies ShopifyCart;
+    expect(toPublicShopifyCart(cart)).toMatchObject({ id: "gid://shopify/Cart/abc", checkoutUrl: "" });
+    expect(cart.id).toContain("private-value");
   });
 });
 

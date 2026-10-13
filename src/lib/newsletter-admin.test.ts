@@ -5,14 +5,14 @@ vi.mock("server-only", () => ({}));
 import { subscribeWithConsent } from "./newsletter";
 
 afterEach(() => {
-  delete process.env.SHOPIFY_ADMIN_ACCESS_TOKEN;
+  delete process.env.SHOPIFY_NEWSLETTER_ADMIN_ACCESS_TOKEN;
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 
 describe("Shopify newsletter consent write", () => {
   it("upserts the email, then records the explicit opt-in through Shopify", async () => {
-    process.env.SHOPIFY_ADMIN_ACCESS_TOKEN = "shpat_test-only";
+    process.env.SHOPIFY_NEWSLETTER_ADMIN_ACCESS_TOKEN = "shpat_test-only";
     let calls = 0;
     const fetchMock = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
       calls += 1;
@@ -37,7 +37,7 @@ describe("Shopify newsletter consent write", () => {
   it("does not claim a successful subscription without an Admin token", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
-    delete process.env.SHOPIFY_ADMIN_ACCESS_TOKEN;
+    delete process.env.SHOPIFY_NEWSLETTER_ADMIN_ACCESS_TOKEN;
 
     await expect(subscribeWithConsent("seed@example.com")).rejects.toThrow("Newsletter sign-up is not configured yet.");
     expect(fetchMock).not.toHaveBeenCalled();

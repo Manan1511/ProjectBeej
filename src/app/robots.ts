@@ -3,5 +3,6 @@ import { getPublicSiteUrl } from "@/lib/site-url";
 
 export default function robots(): MetadataRoute.Robots {
   const base = getPublicSiteUrl();
-  return { rules: { userAgent: "*", allow: "/", disallow: ["/api/", "/cart"] }, ...(base ? { sitemap: `${base}/sitemap.xml` } : {}) };
+  if (process.env.CONTEXT !== "production" || process.env.SHOPIFY_MODE === "preview") return { rules: { userAgent: "*", disallow: "/" } };
+  return { rules: { userAgent: "*", allow: "/", disallow: ["/api/"] }, ...(base ? { sitemap: `${base}/sitemap.xml` } : {}) };
 }

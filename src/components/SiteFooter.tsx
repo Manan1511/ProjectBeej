@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { SiteSettings } from "@/lib/types";
+import { ConsentSettingsButton, TrackedOutboundLink } from "@/components/TrackedOutboundLink";
 
 export function SiteFooter({ settings }: { settings: SiteSettings }) {
   const email = settings.contactEmail || "hello@projectbeej.com";
@@ -20,8 +21,8 @@ export function SiteFooter({ settings }: { settings: SiteSettings }) {
           <h2>Project Beej</h2>
           <Link href="/about">Our story</Link>
           <Link href="/contact">Contact</Link>
-          <a href={`mailto:${email}`}>{email}</a>
-          {settings.whatsappUrl ? <a href={settings.whatsappUrl} target="_blank" rel="noreferrer">Chat on WhatsApp ↗</a> : null}
+          <TrackedOutboundLink href={`mailto:${email}`} kind="email">{email}</TrackedOutboundLink>
+          {settings.whatsappUrl ? <TrackedOutboundLink href={settings.whatsappUrl} kind="whatsapp" target="_blank" rel="noreferrer">Chat on WhatsApp ↗</TrackedOutboundLink> : null}
           {settings.instagramUrl ? <a href={settings.instagramUrl} target="_blank" rel="noreferrer">Instagram ↗</a> : null}
         </div>
         <div className="footer-group footer-policies">
@@ -29,6 +30,7 @@ export function SiteFooter({ settings }: { settings: SiteSettings }) {
           <Link href="/policies/privacy">Privacy</Link>
           <Link href="/policies/refund">Refunds</Link>
           <Link href="/policies/terms">Terms &amp; conditions</Link>
+          <ConsentSettingsButton className="footer-consent-settings" />
         </div>
       </div>
       <div className="footer-bottom">

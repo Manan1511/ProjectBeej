@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { BeejProduct, ProductFaq, ProductReview } from "@/lib/types";
 import { formatINR } from "@/lib/commerce";
 import { ProductGrid } from "@/components/ProductGrid";
 import { getBrowserCartKey, serializeCartWrite } from "@/components/cart-request";
+import { createCommerceItem, createShopifyAnalyticsProduct, emitCommerceEvent } from "@/lib/tracking-client";
 
 const fallbackSkins: Record<string, { tint: string; mascot: string; player: string }> = {
   "peri-peri": { tint: "#F5A287", mascot: "/assets/squad-lifter-hq.png", player: "The Lifter" },
@@ -19,23 +20,31 @@ const fallbackSkins: Record<string, { tint: string; mascot: string; player: stri
 
 async function postAction(url: string, variantId: string, quantity: number) {
   const response = await serializeCartWrite(() => fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ variantId, quantity, clientKey: getBrowserCartKey() }) }));
-  const data = await response.json() as { error?: string; checkoutUrl?: string; warnings?: Array<{ message: string }> };
-  if (!response.ok) throw new Error(data.error || "That snack could not be added right now.");
+  const data = await response.json() as { error?: string; checkoutUrl?: string; cartId?: string; acceptedQuantity?: number; warnings?: Array<{ message: string }> };
+  if (!response.ok) throw Object.assign(new Error(data.error || "That snack could not be added right now."), { status: response.status });
   return data;
 }
 
-export function ProductDetail({ product, faqs, reviews, related }: { product: BeejProduct; faqs: ProductFaq[]; reviews: ProductReview[]; related: BeejProduct[] }) {
+export function ProductDetail({ product, faqs, reviews, related, initialVariantId }: { product: BeejProduct; faqs: ProductFaq[]; reviews: ProductReview[]; related: BeejProduct[]; initialVariantId?: string }) {
   const router = useRouter();
   const skin = fallbackSkins[product.handle] || { tint: "#D6EBC8", mascot: "/assets/seed.png", player: "A Beej original" };
   const [activeImage, setActiveImage] = useState(0);
-  const [variantId, setVariantId] = useState(product.variants.find((variant) => variant.availableForSale)?.id || product.variants[0]?.id || "");
+  const [variantId, setVariantId] = useState(initialVariantId || product.variants.find((variant) => variant.availableForSale)?.id || product.variants[0]?.id || "");
   const [quantity, setQuantity] = useState(1);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const viewedProduct = useRef("");
   const variant = useMemo(() => product.variants.find((item) => item.id === variantId) || product.variants[0], [product.variants, variantId]);
   const price = variant?.price || product.price;
   const available = !product.preview && Boolean(variant?.availableForSale);
+
+  useEffect(() => {
+    if (!variant || viewedProduct.current === product.id) return;
+    viewedProduct.current = product.id;
+    const item = createCommerceItem({ variantId: variant.id, title: product.title, price: variant.price.amount, brand: "Project Beej", category: product.productType, variant: variant.title });
+    if (item) emitCommerceEvent({ name: "view_item", currency: variant.price.currencyCode, value: Number(variant.price.amount), items: [item] });
+  }, [product, variant]);
 
   async function addToBag(buyNow: boolean) {
     if (!variant || !available) return;
@@ -43,12 +52,22 @@ export function ProductDetail({ product, faqs, reviews, related }: { product: Be
     setMessage("");
     try {
       const result = await postAction(buyNow ? "/api/buy-now" : "/api/cart/lines", variant.id, quantity);
-      if (buyNow && result.checkoutUrl) window.location.assign(result.checkoutUrl);
+      const acceptedQuantity = result.acceptedQuantity || 0;
+      const item = createCommerceItem({ variantId: variant.id, title: product.title, price: variant.price.amount, quantity: acceptedQuantity, brand: "Project Beej", category: product.productType, variant: variant.title });
+      const shopifyProduct = createShopifyAnalyticsProduct({ productGid: product.id, variantGid: variant.id, name: product.title, variantName: variant.title, brand: "Project Beej", category: product.productType, price: variant.price.amount, quantity: acceptedQuantity });
+      if (acceptedQuantity > 0 && item) emitCommerceEvent({ name: "add_to_cart", currency: variant.price.currencyCode, value: Number(variant.price.amount) * acceptedQuantity, items: [item] }, { shopifyCartId: result.cartId, ...(shopifyProduct ? { shopifyProducts: [shopifyProduct] } : {}) });
+      if (buyNow && result.checkoutUrl) {
+        if (acceptedQuantity > 0 && item) emitCommerceEvent({ name: "begin_checkout", currency: variant.price.currencyCode, value: Number(variant.price.amount) * acceptedQuantity, items: [item] });
+        window.location.assign(result.checkoutUrl);
+      }
       else {
         setMessage(result.warnings?.map((warning) => warning.message).join(" ") || "Added to your bag.");
         router.refresh();
       }
-    } catch (error) { setMessage(error instanceof Error ? error.message : "That snack could not be added right now."); }
+    } catch (error) {
+      emitCommerceEvent({ name: "commerce_error", action: buyNow ? "buy_now" : "add_to_cart", ...(typeof (error as { status?: unknown })?.status === "number" ? { status_code: (error as { status: number }).status } : {}) });
+      setMessage(error instanceof Error ? error.message : "That snack could not be added right now.");
+    }
     finally { setBusy(false); }
   }
 
@@ -59,11 +78,11 @@ export function ProductDetail({ product, faqs, reviews, related }: { product: Be
         <div className="product-detail-grid">
           <div className="product-gallery">
             <div className="product-main-image" style={{ "--product-tint": skin.tint } as React.CSSProperties}>
-              {product.images[activeImage] ? <Image src={product.images[activeImage].url} alt={product.images[activeImage].alt} fill sizes="(max-width: 760px) 100vw, 54vw" unoptimized /> : <Image className="product-fallback-mascot" src={skin.mascot} alt="" fill sizes="(max-width: 760px) 100vw, 54vw" />}
+              {product.images[activeImage] ? <Image src={product.images[activeImage].url} alt={product.images[activeImage].alt} fill sizes="(max-width: 760px) 100vw, 54vw" /> : <Image className="product-fallback-mascot" src={skin.mascot} alt="" fill sizes="(max-width: 760px) 100vw, 54vw" />}
             </div>
             <div className="product-thumbnails" aria-label="Product photos">
               {product.images.map((image, index) => <button key={image.url} type="button" onClick={() => setActiveImage(index)} aria-label={`Show product image ${index + 1}`} aria-pressed={activeImage === index}>
-                <Image src={image.url} alt="" fill sizes="(max-width: 760px) 25vw, 12vw" unoptimized />
+                <Image src={image.url} alt="" fill sizes="(max-width: 760px) 25vw, 12vw" />
               </button>)}
             </div>
           </div>
@@ -73,7 +92,12 @@ export function ProductDetail({ product, faqs, reviews, related }: { product: Be
             <div className="detail-price-row"><strong>{formatINR(price.amount)}</strong>{product.preview ? <span className="draft-label">Draft price</span> : <span className="detail-currency">{price.currencyCode}</span>}</div>
             <p className="product-lede">{product.description}</p>
 
-            {product.variants.length > 1 ? <label className="variant-select">Choose your option<select value={variantId} onChange={(event) => setVariantId(event.target.value)}>{product.variants.map((item) => <option key={item.id} value={item.id} disabled={!item.availableForSale}>{item.title}{item.availableForSale ? "" : " · unavailable"}</option>)}</select></label> : null}
+            {product.variants.length > 1 ? <label className="variant-select">Choose your option<select value={variantId} onChange={(event) => {
+              setVariantId(event.target.value);
+              const selected = product.variants.find((item) => item.id === event.target.value);
+              const selectedItem = selected && createCommerceItem({ variantId: selected.id, title: product.title, price: selected.price.amount, brand: "Project Beej", category: product.productType, variant: selected.title });
+              if (selected && selectedItem) emitCommerceEvent({ name: "select_item", currency: selected.price.currencyCode, items: [selectedItem], item_list_name: "Product variant" });
+            }}>{product.variants.map((item) => <option key={item.id} value={item.id} disabled={!item.availableForSale}>{item.title}{item.availableForSale ? "" : " · unavailable"}</option>)}</select></label> : null}
             {product.preview ? <div className="preview-inline">This is a design preview. Pack size, final price, tax, stock and product facts must be confirmed in Shopify before orders open.</div> : null}
             <p className="availability" aria-live="polite">{product.preview ? "Preview only · no purchase available" : available ? "Ready to add to your bag" : "Currently unavailable"}</p>
             <div className="purchase-row">
@@ -100,7 +124,7 @@ export function ProductDetail({ product, faqs, reviews, related }: { product: Be
           {reviews.length ? <div className="review-grid">{reviews.map((review, index) => <article className="review-card" key={`${review.author}-${index}`}><span className="review-stars" aria-label={`${review.rating} out of 5 stars`}>{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span>{review.title ? <h3>{review.title}</h3> : null}<p>{review.body}</p><span>By {review.author}</span></article>)}</div> : <p className="review-empty">No approved reviews yet. Reviews will appear here after they’re added in Shopify.</p>}
         </section>
       </div>
-      {related.length ? <section className="related-section"><div className="section-heading"><div><span className="eyebrow">Another round?</span><h2>You might also like</h2></div><Link className="text-link" href="/shop">Shop all snacks ↗</Link></div><ProductGrid products={related} /></section> : null}
+      {related.length ? <section className="related-section"><div className="section-heading"><div><span className="eyebrow">Another round?</span><h2>You might also like</h2></div><Link className="text-link" href="/shop">Shop all snacks ↗</Link></div><ProductGrid products={related} listName="Related products" /></section> : null}
     </>
   );
 }

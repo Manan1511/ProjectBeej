@@ -1,24 +1,8 @@
-import "server-only";
-const windows = new Map<string, { count: number; resetsAt: number }>();
-const WINDOW_MS = 60_000;
-const MAX_ATTEMPTS = 5;
-
-export function consumeNewsletterRateLimit(key: string, now = Date.now()): boolean {
-  const current = windows.get(key);
-  if (!current || current.resetsAt <= now) {
-    windows.set(key, { count: 1, resetsAt: now + WINDOW_MS });
-    return true;
-  }
-  if (current.count >= MAX_ATTEMPTS) return false;
-  current.count += 1;
-  return true;
-}
-
 type AdminResponse<T> = { data?: T; errors?: Array<{ message: string }> };
 
 async function shopifyAdminQuery<T>(query: string, variables: Record<string, unknown>): Promise<T> {
   const domain = process.env.SHOPIFY_STORE_DOMAIN || "projectbeej-1686bmnd.myshopify.com";
-  const token = process.env.SHOPIFY_ADMIN_ACCESS_TOKEN;
+  const token = process.env.SHOPIFY_NEWSLETTER_ADMIN_ACCESS_TOKEN;
   const version = process.env.SHOPIFY_API_VERSION || "2026-10";
   if (!token) throw new Error("Newsletter sign-up is not configured yet.");
   if (!/^[-a-z0-9]+\.myshopify\.com$/i.test(domain) || !/^\d{4}-\d{2}$/.test(version)) {

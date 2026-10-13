@@ -21,6 +21,10 @@ export class CartActionError extends Error {
   }
 }
 
+function variantQuantity(cart: ShopifyCart, variantId: string): number {
+  return cart.lines.reduce((sum, line) => sum + (line.merchandise.id === variantId ? line.quantity : 0), 0);
+}
+
 function unwrap(result: CartMutationResult): ShopifyCart {
   if (result.userErrors.length || !result.cart) throw new CartActionError(result.userErrors[0]?.message || "Shopify could not update your bag.");
   return result.cart;
@@ -30,21 +34,26 @@ export async function appendCartLine(
   client: CartMutationClient,
   existingCartId: string | null,
   line: CartLineInput,
-): Promise<{ cart: ShopifyCart; warnings: Array<{ message: string }>; recovered: boolean }> {
+): Promise<{ cart: ShopifyCart; warnings: Array<{ message: string }>; recovered: boolean; addedQuantity: number }> {
   if (!existingCartId) {
     const result = await client.createCart([line]);
-    return { cart: unwrap(result), warnings: result.warnings, recovered: false };
+    const createdCart = unwrap(result);
+    return { cart: createdCart, warnings: result.warnings, recovered: false, addedQuantity: Math.min(line.quantity, variantQuantity(createdCart, line.merchandiseId)) };
   }
 
   const cart = await client.getCart(existingCartId);
   if (!cart) {
     const result = await client.createCart([line]);
-    return { cart: unwrap(result), warnings: result.warnings, recovered: true };
+    const recoveredCart = unwrap(result);
+    return { cart: recoveredCart, warnings: result.warnings, recovered: true, addedQuantity: Math.min(line.quantity, variantQuantity(recoveredCart, line.merchandiseId)) };
   }
 
   totalCartQuantity([...cart.lines.map((item) => ({ quantity: item.quantity })), { quantity: line.quantity }]);
   const result = await client.addLines(existingCartId, [line]);
-  return { cart: unwrap(result), warnings: result.warnings, recovered: false };
+  const updatedCart = unwrap(result);
+  const previousQuantity = variantQuantity(cart, line.merchandiseId);
+  const acceptedDelta = Math.max(0, variantQuantity(updatedCart, line.merchandiseId) - previousQuantity);
+  return { cart: updatedCart, warnings: result.warnings, recovered: false, addedQuantity: Math.min(line.quantity, acceptedDelta) };
 }
 
 /** Creates a separate one-product cart; it intentionally has no access to the bag cookie or mutation method. */

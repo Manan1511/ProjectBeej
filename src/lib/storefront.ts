@@ -2,6 +2,7 @@ import "server-only";
 import { readCartCookie } from "@/lib/commerce";
 import type { BeejProduct, CartLine, ProductFaq, ProductReview, ShopifyCart, SiteSettings } from "@/lib/types";
 import { parseHomeCopy } from "@/lib/storefront-settings";
+import type { ConsentPreferences } from "@/lib/tracking-types";
 
 const API_VERSION = process.env.SHOPIFY_API_VERSION || "2026-10";
 const domain = process.env.SHOPIFY_STORE_DOMAIN || "projectbeej-1686bmnd.myshopify.com";
@@ -14,11 +15,11 @@ const previewCatalog = [
 ];
 
 const PRODUCT_FIELDS = `
-  id handle title description descriptionHtml productType availableForSale tags
+  id handle title description descriptionHtml productType vendor seo { title description } updatedAt availableForSale tags
   featuredImage { url altText }
   images(first: 10) { nodes { url altText } }
   priceRange { minVariantPrice { amount currencyCode } }
-  variants(first: 50) { nodes { id title availableForSale quantityAvailable price { amount currencyCode } selectedOptions { name value } } }
+  variants(first: 50) { nodes { id title sku barcode compareAtPrice { amount currencyCode } availableForSale quantityAvailable price { amount currencyCode } selectedOptions { name value } } }
   collections(first: 10) { nodes { handle } }
   beejFaqs: metafield(namespace: "beej", key: "faqs") { value }
   beejApprovedReviews: metafield(namespace: "beej", key: "approved_reviews") { value }
@@ -33,9 +34,7 @@ function endpoint(api = "storefront") {
 }
 
 export function getStorefrontMode(): "preview" | "live" {
-  const configured = process.env.SHOPIFY_MODE;
-  if (configured === "preview" || configured === "live") return configured;
-  return process.env.NODE_ENV === "production" ? "live" : "preview";
+  return process.env.SHOPIFY_MODE === "live" ? "live" : "preview";
 }
 
 function storefrontToken(): { value: string; isPrivate: boolean } {
@@ -60,6 +59,7 @@ export async function storefrontQuery<T>(
   query: string,
   variables: Record<string, unknown> = {},
   buyerIp?: string | null,
+  timeoutMs = 12000,
 ): Promise<T> {
   const token = storefrontToken();
   const headers: Record<string, string> = {
@@ -76,7 +76,7 @@ export async function storefrontQuery<T>(
     headers,
     body: JSON.stringify({ query, variables }),
     cache: "no-store",
-    signal: AbortSignal.timeout(12000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!response.ok) throw new Error(`Shopify Storefront API returned ${response.status}.`);
   const payload = (await response.json()) as GraphqlResponse<T>;
@@ -92,11 +92,14 @@ type ShopifyProductRaw = {
   description: string;
   descriptionHtml?: string;
   productType?: string;
+  vendor?: string;
+  seo?: { title?: string | null; description?: string | null } | null;
+  updatedAt?: string;
   availableForSale: boolean;
   featuredImage?: { url: string; altText?: string | null } | null;
   images: { nodes: Array<{ url: string; altText?: string | null }> };
   priceRange: { minVariantPrice: { amount: string; currencyCode: string } };
-  variants: { nodes: Array<{ id: string; title: string; availableForSale: boolean; quantityAvailable?: number | null; price: { amount: string; currencyCode: string }; selectedOptions: Array<{ name: string; value: string }> }> };
+  variants: { nodes: Array<{ id: string; title: string; sku?: string | null; barcode?: string | null; compareAtPrice?: { amount: string; currencyCode: string } | null; availableForSale: boolean; quantityAvailable?: number | null; price: { amount: string; currencyCode: string }; selectedOptions: Array<{ name: string; value: string }> }> };
   collections: { nodes: Array<{ handle: string }> };
   beejFaqs?: { value: string } | null;
   beejApprovedReviews?: { value: string } | null;
@@ -140,6 +143,9 @@ function mapProduct(raw: ShopifyProductRaw): BeejProduct {
     title: raw.title,
     description: raw.description,
     descriptionHtml: raw.descriptionHtml,
+    vendor: raw.vendor,
+    seo: raw.seo,
+    updatedAt: raw.updatedAt,
     productType: raw.productType || "Roasted Makhana",
     images,
     variants: raw.variants.nodes,
@@ -214,13 +220,16 @@ export async function getProduct(handle: string, buyerIp?: string | null): Promi
 
 export async function getSiteSettings(buyerIp?: string | null): Promise<SiteSettings> {
   try {
-    const data = await storefrontQuery<{ shop: { storefrontSettings?: { value: string } | null } }>(
-      `query BeejSettings { shop { storefrontSettings: metafield(namespace: "beej", key: "storefront_settings") { value } } }`,
+    const data = await storefrontQuery<{ shop: { id?: string; paymentSettings?: { currencyCode?: string }; storefrontSettings?: { value: string } | null } }>(
+      `query BeejSettings { shop { id paymentSettings { currencyCode } storefrontSettings: metafield(namespace: "beej", key: "storefront_settings") { value } } }`,
       {},
       buyerIp,
     );
     const parsed = JSON.parse(data.shop.storefrontSettings?.value || "{}") as Record<string, unknown>;
-    const settings: SiteSettings = {};
+    const settings: SiteSettings = {
+      ...(data.shop.id && /^gid:\/\/shopify\/Shop\/\d+$/.test(data.shop.id) ? { shopId: data.shop.id } : {}),
+      ...(data.shop.paymentSettings?.currencyCode && /^[A-Z]{3}$/.test(data.shop.paymentSettings.currencyCode) ? { currencyCode: data.shop.paymentSettings.currencyCode } : {}),
+    };
     const homeCopy = parseHomeCopy(parsed.homeCopy);
     if (homeCopy) settings.homeCopy = homeCopy;
     if (typeof parsed.announcement === "string") settings.announcement = parsed.announcement.slice(0, 160);
@@ -332,4 +341,41 @@ export async function removeShopifyCartLines(cartId: string, lineIds: string[], 
     buyerIp,
   );
   return { ...data, cartLinesRemove: normalizeCartMutation(data.cartLinesRemove) };
+}
+
+export type ShopifyCartAttribute = { key: string; value: string };
+
+export async function getShopifyCartAttributes(cartId: string, buyerIp?: string | null, timeoutMs = 12000): Promise<ShopifyCartAttribute[]> {
+  const safeId = readCartCookie(cartId);
+  if (!safeId) return [];
+  const data = await storefrontQuery<{ cart: { attributes: ShopifyCartAttribute[] } | null }>(
+    `query BeejCartAttributes($id: ID!) { cart(id: $id) { attributes { key value } } }`,
+    { id: safeId },
+    buyerIp,
+    timeoutMs,
+  );
+  return data.cart?.attributes || [];
+}
+
+export async function updateShopifyCartAttributes(cartId: string, attributes: ShopifyCartAttribute[], buyerIp?: string | null, timeoutMs = 12000) {
+  const safeId = readCartCookie(cartId);
+  if (!safeId) throw new Error("Invalid Shopify cart ID.");
+  const data = await storefrontQuery<{ cartAttributesUpdate: { userErrors: Array<{ message: string; code?: string | null }>; warnings: Array<{ message: string }> } }>(
+    `mutation BeejCartAttributesUpdate($cartId: ID!, $attributes: [AttributeInput!]!) { cartAttributesUpdate(cartId: $cartId, attributes: $attributes) { userErrors { message code } warnings { message } } }`,
+    { cartId: safeId, attributes },
+    buyerIp,
+    timeoutMs,
+  );
+  return data.cartAttributesUpdate;
+}
+
+export async function getFreshShopifyCheckoutUrl(cartId: string, consent: ConsentPreferences, buyerIp?: string | null): Promise<string | null> {
+  const safeId = readCartCookie(cartId);
+  if (!safeId) return null;
+  const data = await storefrontQuery<{ cart: { checkoutUrl: string } | null }>(
+    `query BeejFreshCheckout($id: ID!, $analytics: Boolean!, $marketing: Boolean!, $preferences: Boolean!) @inContext(visitorConsent: { analytics: $analytics, marketing: $marketing, preferences: $preferences, saleOfData: false }) { cart(id: $id) { checkoutUrl } }`,
+    { id: safeId, analytics: consent.analytics, marketing: consent.marketing, preferences: consent.preferences },
+    buyerIp,
+  );
+  return data.cart?.checkoutUrl || null;
 }

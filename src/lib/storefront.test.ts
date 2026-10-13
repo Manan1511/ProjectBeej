@@ -5,7 +5,9 @@ vi.mock("server-only", () => ({}));
 import {
   addShopifyCartLines,
   createShopifyCart,
+  getStorefrontMode,
   getProducts,
+  getFreshShopifyCheckoutUrl,
   getShopifyCart,
   removeShopifyCartLines,
   updateShopifyCartLines,
@@ -76,6 +78,14 @@ describe("Shopify cart response mapping", () => {
     vi.unstubAllGlobals();
   });
 
+  it("keeps production in preview until live Shopify mode is explicitly enabled", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("SHOPIFY_MODE", "");
+    expect(getStorefrontMode()).toBe("preview");
+    vi.stubEnv("SHOPIFY_MODE", "live");
+    expect(getStorefrontMode()).toBe("live");
+  });
+
   it("returns cart lines as an array from Shopify's lines connection", async () => {
     respondWith({ cart: shopifyCart });
     const cart = await getShopifyCart(shopifyCart.id);
@@ -118,5 +128,18 @@ describe("Shopify cart response mapping", () => {
     const [product] = await getProducts();
 
     expect(product?.preview).toBe(true);
+  });
+
+  it("uses fresh Shopify checkout data with consent passed in Storefront context", async () => {
+    const fetchMock = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
+      const request = JSON.parse(String(init?.body)) as { query: string; variables: Record<string, unknown> };
+      expect(request.query).toContain("@inContext(visitorConsent:");
+      expect(request.variables).toMatchObject({ analytics: true, marketing: false, preferences: true });
+      expect(request.variables.id).toBe("gid://shopify/Cart/c1?key=private");
+      return new Response(JSON.stringify({ data: { cart: { checkoutUrl: "https://projectbeej-1686bmnd.myshopify.com/checkouts/c1" } } }), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const url = await getFreshShopifyCheckoutUrl("gid://shopify/Cart/c1?key=private", { analytics: true, marketing: false, preferences: true });
+    expect(url).toBe("https://projectbeej-1686bmnd.myshopify.com/checkouts/c1");
   });
 });

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { normalizeQuantity, totalCartQuantity } from "@/lib/commerce";
+import { normalizeQuantity, toPublicShopifyCart, totalCartQuantity } from "@/lib/commerce";
 import { clearStoredCartId, readStoredCartId, storeCartId } from "@/lib/cart-cookie";
 import { requestBuyerIp } from "@/lib/request-ip";
 import { addShopifyCartLines, createShopifyCart, getShopifyCart, getStorefrontMode, removeShopifyCartLines, updateShopifyCartLines } from "@/lib/storefront";
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       };
       const result = await appendCartLine(client, cartId, { merchandiseId: parsed.variantId, quantity });
       await storeCartId(result.cart.id);
-      return NextResponse.json({ cart: result.cart, warnings: result.warnings, recovered: result.recovered });
+      return NextResponse.json({ cart: toPublicShopifyCart(result.cart), cartId: toPublicShopifyCart(result.cart).id, acceptedQuantity: result.addedQuantity, warnings: result.warnings, recovered: result.recovered });
     });
   } catch (error) {
     if (error instanceof z.ZodError) return errorResponse(new Error("Choose a product variant before adding it to your bag."));
@@ -68,7 +68,9 @@ export async function PATCH(request: NextRequest) {
       const result = await updateShopifyCartLines(cartId, [{ id: parsed.lineId, quantity }], buyerIp);
       const updated = result.cartLinesUpdate;
       if (updated.userErrors.length || !updated.cart) return errorResponse(new Error(mutationError(updated.userErrors)), 422);
-      return NextResponse.json({ cart: updated.cart, warnings: updated.warnings });
+      const updatedQuantity = updated.cart.lines.find((line) => line.id === target.id)?.quantity || 0;
+      const quantityDelta = updatedQuantity - target.quantity;
+      return NextResponse.json({ cart: toPublicShopifyCart(updated.cart), acceptedQuantity: Math.max(0, quantityDelta), removedQuantity: Math.max(0, -quantityDelta), warnings: updated.warnings });
     });
   } catch (error) {
     if (error instanceof z.ZodError || (error instanceof Error && error.message.includes("Choose a whole number"))) return errorResponse(error);
@@ -90,12 +92,13 @@ export async function DELETE(request: NextRequest) {
         await clearStoredCartId();
         return errorResponse(new Error("Your bag has expired. Start a new bag to continue."), 410);
       }
-      if (!cart.lines.some((line) => line.id === lineId)) return errorResponse(new Error("That item is no longer in your bag."), 404);
+      const target = cart.lines.find((line) => line.id === lineId);
+      if (!target) return errorResponse(new Error("That item is no longer in your bag."), 404);
       const result = await removeShopifyCartLines(cartId, [lineId], buyerIp);
       const updated = result.cartLinesRemove;
       if (updated.userErrors.length || !updated.cart) return errorResponse(new Error(mutationError(updated.userErrors)), 422);
       if (updated.cart.totalQuantity === 0) await clearStoredCartId();
-      return NextResponse.json({ cart: updated.cart, warnings: updated.warnings });
+      return NextResponse.json({ cart: toPublicShopifyCart(updated.cart), removedQuantity: target.quantity, warnings: updated.warnings });
     });
   } catch (error) {
     return errorResponse(error, 502);

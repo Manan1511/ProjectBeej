@@ -1,3 +1,5 @@
+import type { ShopifyCart } from "@/lib/types";
+
 export const FREE_SHIPPING_THRESHOLD = 499;
 export const SHIPPING_FEE = 49;
 export const MAX_LINE_QUANTITY = 10;
@@ -66,6 +68,11 @@ export function serializeCartCookie(value: string): string {
 export function readCartCookie(value: string | undefined): string | null {
   if (!value?.startsWith("gid://shopify/Cart/")) return null;
   return value;
+}
+
+/** Cart keys remain in the HttpOnly cookie; client components receive only the non-secret GID. */
+export function toPublicShopifyCart(cart: ShopifyCart): ShopifyCart {
+  return { ...cart, id: cart.id.split("?", 1)[0] || "", checkoutUrl: "" };
 }
 
 export function formatINR(amount: string | number): string {

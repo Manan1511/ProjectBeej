@@ -6,7 +6,6 @@ const nextConfig: NextConfig = {
   compress: true,
   turbopack: { root: process.cwd() },
   images: {
-    unoptimized: true,
     remotePatterns: [{ protocol: "https", hostname: "cdn.shopify.com" }],
   },
 };

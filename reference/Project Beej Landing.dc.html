@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F1E4;font-family:'Outfit',sans-serif;color:#2B3220;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+a{color:#2B3220;text-decoration:none}
+a:hover{color:#5E6B45}
+img{display:block}
+</style>
+</helmet>
+<div style="min-height:100vh;background:#F6F1E4">
+  <sc-if value="{{ showAnnouncement }}" hint-placeholder-val="{{ true }}">
+    <div style="background:#C4D19B;color:#2B3220;text-align:center;font-weight:600;font-size:14px;letter-spacing:.3px;padding:9px 16px">Free shipping on orders above ₹499</div>
+  </sc-if>
+
+  <section style="background:#3A4229;color:#F6F1E4;position:relative;overflow:hidden">
+    <nav style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;padding:14px clamp(20px,5vw,64px)">
+      <div style="display:flex;gap:28px;font-weight:500;font-size:15px;flex-wrap:wrap">
+        <a href="#flavours" style="color:#F6F1E4">Shop</a>
+        <a href="#story" style="color:#F6F1E4">Our Story</a>
+      </div>
+      <a href="#" style="display:block;width:150px;height:72px;overflow:hidden;position:relative">
+        <img src="assets/logo.png" alt="Project Beej" style="position:absolute;width:250px;left:-50px;top:-86px"></img>
+      </a>
+      <div style="display:flex;gap:22px;justify-content:flex-end;align-items:center;font-weight:500;font-size:15px">
+        <a href="#gallery" style="color:#F6F1E4">#SnackWithBeej</a>
+        <div style="display:flex;align-items:center;gap:8px;border:1.5px solid #C4D19B;color:#C4D19B;border-radius:999px;padding:5px 8px 5px 14px">Bag <span style="background:#C4D19B;color:#2B3220;border-radius:999px;min-width:24px;text-align:center;padding:1px 7px;font-size:13px;font-weight:700">{{ bag }}</span></div>
+      </div>
+    </nav>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:clamp(32px,5vw,72px);align-items:center;max-width:1280px;margin:0 auto;padding:clamp(32px,5vw,64px) clamp(20px,5vw,64px) clamp(56px,7vw,96px)">
+      <div style="display:flex;flex-direction:column;gap:24px">
+        <div style="display:flex;gap:10px;align-items:center;font-size:15px;color:#C4D19B;font-weight:500">Light · Crunchy · Healthy</div>
+        <h1 style="margin:0;font-family:'DM Serif Display',serif;font-weight:400;font-size:clamp(56px,7.5vw,108px);line-height:.95;letter-spacing:-1px;text-wrap:balance">Small seed.<br><span style="font-style:italic;color:#C4D19B">Big crunch.</span></h1>
+        <p style="margin:0;max-width:440px;font-size:19px;line-height:1.5;color:#E4E6D4;text-wrap:pretty">Roasted makhana — popped lotus seeds — seasoned with flavours that actually show up. Light, crunchy, and quietly good for you.</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <a href="#flavours" style="background:#C4D19B;color:#2B3220;font-weight:700;padding:15px 30px;border-radius:999px;font-size:16px" style-hover="background:#F6F1E4;color:#2B3220">Shop flavours</a>
+          <a href="#story" style="border:1.5px solid #C4D19B;color:#C4D19B;font-weight:600;padding:13.5px 28px;border-radius:999px;font-size:16px" style-hover="background:rgba(196,209,155,.12);color:#C4D19B">Our story</a>
+        </div>
+      </div>
+      <div style="position:relative">
+        <div style="aspect-ratio:4/4.4;border-radius:999px 999px 28px 28px;overflow:hidden;background:#2B3220">
+          <img src="{{ heroSrc }}" alt="Project Beej makhana pouch among lotus leaves" style="width:100%;height:100%;object-fit:cover"></img>
+        </div>
+        <div style="position:absolute;left:-18px;bottom:36px;background:#F6F1E4;color:#2B3220;border-radius:20px;padding:14px 18px;display:flex;flex-direction:column;gap:2px;box-shadow:0 12px 30px rgba(0,0,0,.25)">
+          <span style="font-family:'DM Serif Display',serif;font-size:30px;line-height:1">99%</span>
+          <span style="font-size:13px;font-weight:500">popped lotus seeds</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div style="background:#C4D19B;padding:16px clamp(20px,5vw,64px);display:flex;flex-wrap:wrap;justify-content:center;gap:12px 36px;font-weight:600;font-size:15px;letter-spacing:.6px;text-transform:uppercase;color:#2B3220">
+    <sc-for list="{{ benefits }}" as="b" hint-placeholder-count="5">
+      <span style="display:flex;align-items:center;gap:10px"><span style="width:7px;height:7px;border-radius:50%;background:#3A4229"></span>{{ b }}</span>
+    </sc-for>
+  </div>
+
+  <section style="padding:clamp(64px,9vw,120px) clamp(20px,5vw,64px);text-align:center;display:flex;flex-direction:column;align-items:center;gap:22px">
+    <img src="assets/seed.png" alt="" style="width:64px;height:64px;border-radius:50%;object-fit:cover;object-position:50% 52%"></img>
+    <p style="margin:0;max-width:820px;font-family:'DM Serif Display',serif;font-size:clamp(30px,3.6vw,48px);line-height:1.18;color:#2B3220;text-wrap:balance">“A seed may be tiny, but it carries the <span style="font-style:italic;color:#6E7D4E">promise of growth.</span>”</p>
+    <p style="margin:0;font-size:15px;color:#6B6F5C;letter-spacing:.4px">Rooted in nature. Growing with purpose.</p>
+  </section>
+
+  <section id="flavours" style="padding:0 clamp(20px,5vw,64px) clamp(72px,9vw,120px)">
+    <div style="max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:40px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap">
+        <h2 style="margin:0;font-family:'DM Serif Display',serif;font-weight:400;font-size:clamp(44px,5vw,72px);line-height:1;letter-spacing:-.5px">Pick your player.</h2>
+        <p style="margin:0;max-width:380px;font-size:17px;line-height:1.5;color:#55594A;text-wrap:pretty">Four flavours, four very committed athletes. Hover a jar to meet it in real life.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:20px">
+        <sc-for list="{{ flavours }}" as="f" hint-placeholder-count="4">
+          <div onMouseEnter="{{ f.enter }}" onMouseLeave="{{ f.leave }}" style="background:{{ f.bg }};border-radius:28px;overflow:hidden;display:flex;flex-direction:column">
+            <div style="position:relative;aspect-ratio:1/1;overflow:hidden">
+              <img src="{{ f.mascot }}" alt="{{ f.name }} mascot" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></img>
+              <img src="{{ f.photo }}" alt="{{ f.name }} jar" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .35s ease;opacity:{{ f.photoOpacity }}"></img>
+              <span style="position:absolute;top:14px;left:14px;background:#F6F1E4;color:#2B3220;font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:6px 12px;border-radius:999px">{{ f.player }}</span>
+            </div>
+            <div style="padding:22px 22px 24px;display:flex;flex-direction:column;gap:8px;flex:1;color:{{ f.ink }}">
+              <span style="font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase">Roasted makhana</span>
+              <h3 style="margin:0;font-family:'DM Serif Display',serif;font-weight:400;font-size:32px;line-height:1">{{ f.name }}</h3>
+              <p style="margin:0 0 12px;font-size:15px;line-height:1.45;text-wrap:pretty">{{ f.desc }}</p>
+              <button onClick="{{ f.add }}" style="margin-top:auto;align-self:flex-start;border:none;cursor:pointer;background:#2B3220;color:#F6F1E4;font-family:Outfit,sans-serif;font-weight:600;font-size:15px;padding:12px 22px;border-radius:999px" style-hover="background:#3A4229">{{ f.cta }}</button>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section id="story" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));background:#3A4229;color:#F6F1E4">
+    <div style="min-height:480px;position:relative">
+      <img src="assets/makhana-pond.png" alt="Makhana pouch by a lotus pond" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></img>
+    </div>
+    <div style="display:flex;flex-direction:column;justify-content:center;gap:26px;padding:clamp(48px,7vw,104px) clamp(20px,5vw,72px)">
+      <span style="font-size:13px;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;color:#C4D19B">Our story</span>
+      <h2 style="margin:0;font-family:'DM Serif Display',serif;font-weight:400;font-size:clamp(40px,4.6vw,64px);line-height:1.02;text-wrap:balance">The smallest choices shape the <span style="font-style:italic;color:#C4D19B">biggest</span> transformations.</h2>
+      <p style="margin:0;max-width:480px;font-size:17px;line-height:1.6;color:#E4E6D4;text-wrap:pretty">Project Beej celebrates nature's most humble ingredients. Makhana grows in lotus ponds, pops like corn and roasts to a crunch — we just add the seasoning and get out of the way.</p>
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;max-width:480px;border-top:1px solid rgba(196,209,155,.35);padding-top:24px">
+        <sc-for list="{{ stats }}" as="s" hint-placeholder-count="3">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <span style="font-family:'DM Serif Display',serif;font-size:clamp(30px,3vw,40px);line-height:1;color:#C4D19B">{{ s.v }}</span>
+            <span style="font-size:13px;line-height:1.35;color:#E4E6D4">{{ s.l }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <span style="font-size:12px;color:#A9AE94">Per 100g, Roasted Makhana.</span>
+    </div>
+  </section>
+
+  <section style="padding:clamp(72px,9vw,120px) clamp(20px,5vw,64px);background:#F6F1E4">
+    <div style="max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:48px;align-items:center;text-align:center">
+      <h2 style="margin:0;font-family:'DM Serif Display',serif;font-weight:400;font-size:clamp(40px,5vw,68px);line-height:1;text-wrap:balance">From pond to pouch.</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:40px;width:100%">
+        <sc-for list="{{ steps }}" as="s" hint-placeholder-count="3">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:14px">
+            <div style="width:64px;height:64px;border-radius:50%;border:1.5px solid #3A4229;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:26px;color:#3A4229">{{ s.n }}</div>
+            <h3 style="margin:0;font-family:'DM Serif Display',serif;font-weight:400;font-size:28px">{{ s.t }}</h3>
+            <p style="margin:0;max-width:300px;font-size:16px;line-height:1.55;color:#55594A;text-wrap:pretty">{{ s.b }}</p>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section id="gallery" style="padding:0 clamp(20px,5vw,64px) clamp(72px,9vw,120px)">
+    <div style="max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:32px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px">
+        <h2 style="margin:0;font-family:'DM Serif Display',serif;font-weight:400;font-size:clamp(40px,5vw,68px);line-height:1">#SnackWithBeej</h2>
+        <a href="#" style="font-weight:600;border-bottom:1.5px solid #2B3220;padding-bottom:2px">Follow on Instagram</a>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:16px">
+        <sc-for list="{{ gallery }}" as="g" hint-placeholder-count="4">
+          <div style="aspect-ratio:1/1;border-radius:24px;overflow:hidden;background:#E6E0CC">
+            <img src="{{ g.src }}" alt="{{ g.alt }}" style="width:100%;height:100%;object-fit:cover;transition:transform .5s ease" style-hover="transform:scale(1.05)"></img>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <footer style="background:#3A4229;color:#E4E6D4;padding:56px clamp(20px,5vw,64px) 40px">
+    <div style="max-width:1240px;margin:0 auto;display:flex;flex-wrap:wrap;gap:40px;justify-content:space-between;align-items:flex-start">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="width:150px;height:72px;overflow:hidden;position:relative;border-radius:10px">
+          <img src="assets/logo.png" alt="Project Beej" style="position:absolute;width:250px;left:-50px;top:-86px"></img>
+        </div>
+        <span style="font-size:14px;max-width:260px;line-height:1.5">Rooted in nature. Growing with purpose. Made in Surat, Gujarat.</span>
+      </div>
+      <div style="display:flex;gap:56px;flex-wrap:wrap;font-size:15px">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <span style="font-weight:700;color:#C4D19B;font-size:13px;letter-spacing:1px;text-transform:uppercase">Shop</span>
+          <a href="#flavours" style="color:#E4E6D4">Flavours</a><a href="#flavours" style="color:#E4E6D4">Ready to Roast</a><a href="#flavours" style="color:#E4E6D4">Bundles</a>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <span style="font-weight:700;color:#C4D19B;font-size:13px;letter-spacing:1px;text-transform:uppercase">Say hello</span>
+          <a href="mailto:hello@projectbeej.com" style="color:#E4E6D4">hello@projectbeej.com</a><a href="#" style="color:#E4E6D4">projectbeej.com</a>
+        </div>
+      </div>
+    </div>
+    <div style="max-width:1240px;margin:40px auto 0;border-top:1px solid rgba(196,209,155,.2);padding-top:20px;font-size:13px;color:#A9AE94">© 2026 Project Beej Foods Pvt. Ltd. · Product of India</div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showAnnouncement&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;heroImage&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;lotus&quot;,&quot;pond&quot;],&quot;default&quot;:&quot;lotus&quot;,&quot;tsType&quot;:&quot;'lotus'|'pond'&quot;,&quot;section&quot;:&quot;Hero&quot;}}">
+class Component extends DCLogic {
+  state = { bag: 0, hover: -1, added: {} };
+  renderVals() {
+    const F = [
+      { id: 'peri', name: 'Peri Peri', player: 'The Lifter', desc: 'Chilli heat that lifts heavy. Smoky, tangy, a little bit loud.', mascot: 'assets/mascot-lifter.png', photo: 'assets/peri-drop.png', bg: '#F5A287', ink: '#2B3220' },
+      { id: 'cheese', name: 'Cheese', player: 'The Skater', desc: 'Golden, cheesy and effortlessly cool. Disappears in one session.', mascot: 'assets/mascot-skater.png', photo: 'assets/cheese-drop.png', bg: '#FFD98E', ink: '#2B3220' },
+      { id: 'himalayan', name: 'Himalayan Salt & Pepper', player: 'The Striker', desc: 'Pink salt and cracked pepper. The classic that never misses.', mascot: 'assets/mascot-runner.png', photo: 'assets/himalayan-reach.png', bg: '#F7B3BB', ink: '#2B3220' },
+      { id: 'pudina', name: 'Pudina', player: 'The Smasher', desc: 'Cool mint with a sharp finish. Fresh enough to win every rally.', mascot: 'assets/mascot-pickleball.png', photo: 'assets/pudina-hands.png', bg: '#B9DCA3', ink: '#2B3220' }
+    ];
+    const { hover, added } = this.state;
+    return {
+      bag: this.state.bag,
+      showAnnouncement: this.props.showAnnouncement ?? true,
+      heroSrc: (this.props.heroImage ?? 'lotus') === 'pond' ? 'assets/makhana-pond.png' : 'assets/makhana-lotus.png',
+      benefits: ['Naturally gluten free', 'Protein packed', 'Rich in fibre', 'Jain friendly', 'Everyday wellness'],
+      flavours: F.map((f, i) => ({
+        ...f,
+        photoOpacity: hover === i ? 1 : 0,
+        cta: added[f.id] ? `Added ✓ (${added[f.id]})` : 'Add to bag',
+        enter: () => this.setState({ hover: i }),
+        leave: () => this.setState({ hover: -1 }),
+        add: () => this.setState(s => ({ bag: s.bag + 1, added: { ...s.added, [f.id]: (s.added[f.id] || 0) + 1 } }))
+      })),
+      stats: [{ v: '13.6g', l: 'protein' }, { v: '4.4g', l: 'dietary fibre' }, { v: '0g', l: 'added sugar' }],
+      steps: [
+        { n: '1', t: 'Harvested', b: 'Lotus seeds are gathered by hand from shallow ponds, then sun-dried.' },
+        { n: '2', t: 'Popped', b: 'Heated until they burst into light, airy puffs — no frying involved.' },
+        { n: '3', t: 'Roasted', b: 'Slow-roasted for crunch and tossed in seasoning. Sealed fresh.' }
+      ],
+      gallery: [
+        { src: 'assets/pudina-pop.png', alt: 'Pudina jar with flying makhana' },
+        { src: 'assets/himalayan-yoga.png', alt: 'Himalayan Salt & Pepper jar beside a yoga mat' },
+        { src: 'assets/cheese-table.png', alt: 'Cheese jar on a yellow table' },
+        { src: 'assets/peri-flatlay.png', alt: 'Peri Peri jar flat lay with chillies' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

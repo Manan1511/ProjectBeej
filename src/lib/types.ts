@@ -2,6 +2,9 @@ export type ProductImage = { url: string; alt: string };
 export type ProductVariant = {
   id: string;
   title: string;
+  sku?: string | null;
+  barcode?: string | null;
+  compareAtPrice?: { amount: string; currencyCode: string } | null;
   availableForSale: boolean;
   quantityAvailable?: number | null;
   price: { amount: string; currencyCode: string };
@@ -15,6 +18,9 @@ export type BeejProduct = {
   title: string;
   description: string;
   descriptionHtml?: string;
+  vendor?: string;
+  seo?: { title?: string | null; description?: string | null } | null;
+  updatedAt?: string;
   productType: string;
   images: ProductImage[];
   variants: ProductVariant[];
@@ -80,6 +86,8 @@ export type HomeCopy = Partial<Record<
 >>;
 
 export type SiteSettings = {
+  shopId?: string;
+  currencyCode?: string;
   announcement?: string;
   instagramUrl?: string;
   whatsappUrl?: string;
