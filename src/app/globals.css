@@ -50,7 +50,7 @@ button { color: inherit; }
 .mobile-menu a:hover { background: rgb(196 209 155 / 14%); color: var(--sage); }
 
 .hero-section { position: relative; overflow: hidden; background: var(--olive); color: var(--cream); }
-.hero-stripes { position: absolute; inset: -65%; pointer-events: none; transform-origin: 64% 50%; background: repeating-conic-gradient(from 0deg at 64% 50%, var(--olive) 0deg 9deg, var(--olive-shadow) 9deg 18deg); opacity: .8; animation: hero-stripes-rotate 48s linear infinite; }
+.hero-stripes { position: absolute; inset: -150%; pointer-events: none; transform-origin: 58% 50%; background: repeating-conic-gradient(from 0deg at 58% 50%, var(--olive) 0deg 9deg, var(--olive-shadow) 9deg 18deg); opacity: .8; animation: hero-stripes-rotate 48s linear infinite; }
 .hero-inner { position: relative; display: grid; grid-template-columns: minmax(0, 1.04fr) minmax(0, .96fr); align-items: center; gap: clamp(28px, 5vw, 72px); width: min(100%, 1440px); min-height: 620px; margin: 0 auto; padding: clamp(45px, 5vw, 72px) clamp(20px, 5vw, 64px) clamp(65px, 7vw, 100px); }
 .hero-copy { display: flex; flex-direction: column; align-items: flex-start; gap: 22px; }
 .hero-eyebrow { display: flex; align-items: center; gap: 10px; color: var(--sage); font-size: 13px; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; }
