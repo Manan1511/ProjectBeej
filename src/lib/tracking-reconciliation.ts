@@ -1,6 +1,7 @@
 import { createHash, createHmac } from "node:crypto";
 import { handleShopifyTrackingWebhook } from "@/lib/tracking-webhook-handler";
 import { trackingDatabase } from "@/lib/tracking-store";
+import { getShopifyAdminAccessToken, getShopifyAdminStoreDomain } from "@/lib/shopify-admin-auth";
 
 const ORDERS_QUERY = `query BeejReconcileRecentOrders($after: String, $query: String!) {
   orders(first: 100, after: $after, query: $query, sortKey: UPDATED_AT, reverse: false) {
@@ -87,10 +88,10 @@ async function trackedOrderIds(orderGids: string[]): Promise<Set<string>> {
 }
 
 async function shopifyOrders(after: string | null, since: string) {
-  const domain = process.env.SHOPIFY_STORE_DOMAIN || "projectbeej-1686bmnd.myshopify.com";
-  const token = process.env.SHOPIFY_TRACKING_ADMIN_ACCESS_TOKEN;
+  const domain = getShopifyAdminStoreDomain();
   const version = process.env.SHOPIFY_API_VERSION || "2026-10";
-  if (!token || !/^[-a-z0-9]+\.myshopify\.com$/i.test(domain) || !/^\d{4}-\d{2}$/.test(version)) throw new Error("Tracking reconciliation is not configured.");
+  if (!/^\d{4}-\d{2}$/.test(version)) throw new Error("Tracking reconciliation is not configured.");
+  const token = await getShopifyAdminAccessToken();
   const response = await fetch(`https://${domain}/admin/api/${version}/graphql.json`, {
     method: "POST",
     headers: { "content-type": "application/json", "X-Shopify-Access-Token": token },
@@ -106,7 +107,7 @@ async function shopifyOrders(after: string | null, since: string) {
 }
 
 async function dispatchSynthetic(topic: "orders/paid" | "refunds/create", entityId: string, payload: Record<string, unknown>): Promise<void> {
-  const secret = process.env.SHOPIFY_TRACKING_WEBHOOK_SECRET || "";
+  const secret = process.env.SHOPIFY_TRACKING_WEBHOOK_SECRET || process.env.SHOPIFY_ADMIN_CLIENT_SECRET || "";
   const shop = (process.env.SHOPIFY_STORE_DOMAIN || "projectbeej-1686bmnd.myshopify.com").toLowerCase();
   if (!secret) throw new Error("Shopify tracking webhook secret is not configured.");
   const rawBody = JSON.stringify(payload);

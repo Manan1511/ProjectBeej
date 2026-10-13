@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
+vi.mock("server-only", () => ({}));
+
 import { handleNewsletterSubmission } from "@/lib/newsletter-handler";
 
 const deps = (overrides: Partial<Parameters<typeof handleNewsletterSubmission>[2]> = {}) => ({

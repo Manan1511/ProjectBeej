@@ -1,3 +1,5 @@
+import { getShopifyAdminAccessToken, getShopifyAdminStoreDomain } from "@/lib/shopify-admin-auth";
+
 type AdminResponse<T> = { data?: T; errors?: Array<{ message?: string }> };
 
 const REFUND_QUERY = `query BeejTrackingRefund($id: ID!) {
@@ -13,11 +15,11 @@ const REFUND_QUERY = `query BeejTrackingRefund($id: ID!) {
 }`;
 
 export async function getShopifyRefundStatus(refundGid: string): Promise<Record<string, unknown> | null> {
-  const domain = process.env.SHOPIFY_STORE_DOMAIN || "projectbeej-1686bmnd.myshopify.com";
-  const token = process.env.SHOPIFY_TRACKING_ADMIN_ACCESS_TOKEN;
+  const domain = getShopifyAdminStoreDomain();
   const version = process.env.SHOPIFY_API_VERSION || "2026-10";
-  if (!token || !/^[-a-z0-9]+\.myshopify\.com$/i.test(domain) || !/^\d{4}-\d{2}$/.test(version)) throw new Error("Shopify tracking Admin API is not configured.");
+  if (!/^\d{4}-\d{2}$/.test(version)) throw new Error("Shopify tracking Admin API is not configured.");
   if (!/^gid:\/\/shopify\/Refund\/\d+$/.test(refundGid)) throw new Error("Invalid Shopify refund ID.");
+  const token = await getShopifyAdminAccessToken();
   const response = await fetch(`https://${domain}/admin/api/${version}/graphql.json`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-Shopify-Access-Token": token },

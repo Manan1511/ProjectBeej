@@ -83,9 +83,13 @@ For each product, create Storefront-accessible `beej.faqs` and `beej.approved_re
 
 The privacy policy, refund policy, and terms page read Shopify's native policy fields. A visible setup-pending page is shown while the corresponding Shopify policy is empty. Complete and approve each policy in Shopify before launch.
 
-## 4. Newsletter consent
+## 4. Shopify Admin integrations
 
-Newsletter sign-up requires a separate Shopify Admin API app token in `SHOPIFY_ADMIN_ACCESS_TOKEN`. Grant only `write_customers`, then keep that credential in Netlify's server environment, never in `NEXT_PUBLIC_*`, browser code, or source control. The endpoint validates email and the required, unchecked-by-default consent box, rate-limits requests, upserts the Shopify customer, and records the consent timestamp and single-opt-in level. No signup is reported as successful if Shopify is not configured or rejects the write.
+Set `SHOPIFY_ADMIN_CLIENT_ID` and `SHOPIFY_ADMIN_CLIENT_SECRET` from the installed Shopify Dev Dashboard app in `.env.local` and Netlify's server environment. Keep both server-only. The app exchanges them for short-lived Admin API access tokens and refreshes tokens automatically.
+
+Grant this app `read_orders` for paid-order and refund reconciliation, plus `write_customers` for newsletter signup and explicit email marketing consent. Shopify limits standard order access to the most recent 60 days; do not request `read_all_orders` unless older-order reconciliation becomes a confirmed requirement. The tracking webhook handler uses the app client secret to verify webhook signatures; set `SHOPIFY_TRACKING_WEBHOOK_SECRET` only if an explicit override is needed.
+
+Configure `orders/paid` and `refunds/create` webhooks to `https://YOUR_FINAL_DOMAIN/api/webhooks/shopify/tracking`. Newsletter sign-up validates the address and the required, unchecked-by-default consent box, rate-limits requests, upserts the Shopify customer, and records the consent timestamp and single-opt-in level. No signup is reported as successful if Shopify is not configured or rejects the write.
 
 ## 5. Payments, checkout, and shipping
 

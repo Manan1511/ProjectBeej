@@ -22,9 +22,8 @@ Copy `.env.example` to `.env.local` for local work. Put production and test secr
 | `META_CAPI_VERSION`, `META_TEST_CAPI_VERSION` | Explicit Graph API versions approved for the Meta app. |
 | `SUPABASE_URL`, `SUPABASE_SECRET_KEY` | Separate tracking project URL and server-only secret key. Do not use the currently connected Supabase account. |
 | `TRACKING_SIGNING_SECRET` | Random server secret, at least 32 characters; used for signed checkout context and private rate-limit keys. |
-| `SHOPIFY_TRACKING_WEBHOOK_SECRET` | Shopify webhook signing secret for the dedicated tracking webhook subscription. |
-| `SHOPIFY_TRACKING_ADMIN_ACCESS_TOKEN` | Dedicated server-only token with `read_orders`; request approved `read_all_orders` only if older refund reconciliation is needed. |
-| `SHOPIFY_NEWSLETTER_ADMIN_ACCESS_TOKEN` | Separate server-only app token with the minimum customer-write access needed for explicit newsletter opt-in. |
+| `SHOPIFY_ADMIN_CLIENT_ID`, `SHOPIFY_ADMIN_CLIENT_SECRET` | Server-only credentials for the installed Shopify Dev Dashboard app. The server exchanges them for short-lived Admin API tokens and refreshes them automatically. The app needs `read_orders` and `write_customers`. |
+| `SHOPIFY_TRACKING_WEBHOOK_SECRET` | Optional webhook signing-secret override. Defaults to the Shopify app client secret. |
 | `SITE_URL`, `NEXT_PUBLIC_SITE_URL` | Final HTTPS canonical origin, set to the same origin. |
 | `SHOPIFY_CHECKOUT_ORIGINS` | Comma-separated HTTPS checkout origins when Shopify checkout uses a host different from the storefront or `myshopify.com` domain. |
 | `SHOPIFY_MODE` | Keep `preview` until published catalogue, checkout and policies are approved; use `live` only for production. |
@@ -43,12 +42,11 @@ No Supabase project is linked by this source tree. Remote migrations and databas
 
 ## Shopify setup
 
-1. Create a dedicated tracking app. Configure `orders/paid` and `refunds/create` webhooks to `https://YOUR_FINAL_DOMAIN/api/webhooks/shopify/tracking`, using the raw-body HMAC secret stored as `SHOPIFY_TRACKING_WEBHOOK_SECRET`.
-2. Configure the tracking Admin token with `read_orders`. Shopify restricts orders to the last 60 days by default; request `read_all_orders` only for an approved older-refund use case.
-3. Create a different newsletter app with only the customer permissions needed to upsert an address and record marketing consent. Store its token as `SHOPIFY_NEWSLETTER_ADMIN_ACCESS_TOKEN`.
-4. In `Settings → Customer events`, create a Custom Pixel from `docs/tracking/shopify-checkout-pixel.js`. Replace its `SITE_ORIGIN` placeholder with the final HTTPS origin. Add the actual Shopify checkout host to `SHOPIFY_CHECKOUT_ORIGINS` if needed.
-5. Set the pixel privacy requirement to **Not required** so its consent-reduction listener also receives marketing-only and withdrawal changes. The code gates analytics itself, and no checkout purchase is sent from this pixel.
-6. In a test shop, verify checkout start, shipping, payment and completed-diagnostic events. Confirm `checkout_completed_diagnostic` has no transaction ID and does not create a purchase. Disable old checkout purchase tags before enabling server-side purchase reporting.
+1. Install the Shopify Dev Dashboard app on the store. Configure the same app with only `read_orders` and `write_customers`, then put its client ID and secret in the server environment. The server obtains and refreshes short-lived Admin API tokens automatically.
+2. Configure `orders/paid` and `refunds/create` webhooks to `https://YOUR_FINAL_DOMAIN/api/webhooks/shopify/tracking`. Shopify webhook signatures use the app client secret by default; set `SHOPIFY_TRACKING_WEBHOOK_SECRET` only if the subscription requires a different signing secret. Shopify restricts orders to the last 60 days by default; request `read_all_orders` only if an approved older-order use case is added.
+3. In `Settings → Customer events`, create a Custom Pixel from `docs/tracking/shopify-checkout-pixel.js`. Replace its `SITE_ORIGIN` placeholder with the final HTTPS origin. Add the actual Shopify checkout host to `SHOPIFY_CHECKOUT_ORIGINS` if needed.
+4. Set the pixel privacy requirement to **Not required** so its consent-reduction listener also receives marketing-only and withdrawal changes. The code gates analytics itself, and no checkout purchase is sent from this pixel.
+5. In a test shop, verify checkout start, shipping, payment and completed-diagnostic events. Confirm `checkout_completed_diagnostic` has no transaction ID and does not create a purchase. Disable old checkout purchase tags before enabling server-side purchase reporting.
 
 The custom pixel uses Shopify's documented customer privacy event and cart attributes. Shopify's initial checkout cart snapshot exposes attributes only on stores upgraded to Checkout Extensibility. If that snapshot is unavailable, the checkout pixel intentionally sends no analytics event.
 

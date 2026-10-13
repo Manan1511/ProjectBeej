@@ -1,13 +1,14 @@
+import { getShopifyAdminAccessToken, getShopifyAdminStoreDomain } from "@/lib/shopify-admin-auth";
+
 type AdminResponse<T> = { data?: T; errors?: Array<{ message: string }> };
 
 async function shopifyAdminQuery<T>(query: string, variables: Record<string, unknown>): Promise<T> {
-  const domain = process.env.SHOPIFY_STORE_DOMAIN || "projectbeej-1686bmnd.myshopify.com";
-  const token = process.env.SHOPIFY_NEWSLETTER_ADMIN_ACCESS_TOKEN;
+  const domain = getShopifyAdminStoreDomain();
   const version = process.env.SHOPIFY_API_VERSION || "2026-10";
-  if (!token) throw new Error("Newsletter sign-up is not configured yet.");
-  if (!/^[-a-z0-9]+\.myshopify\.com$/i.test(domain) || !/^\d{4}-\d{2}$/.test(version)) {
+  if (!/^\d{4}-\d{2}$/.test(version)) {
     throw new Error("Shopify Admin API configuration is invalid.");
   }
+  const token = await getShopifyAdminAccessToken();
 
   const response = await fetch(`https://${domain}/admin/api/${version}/graphql.json`, {
     method: "POST",

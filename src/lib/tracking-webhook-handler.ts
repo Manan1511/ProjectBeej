@@ -49,7 +49,7 @@ function trackingCapability(order: Record<string, unknown>): string | null {
 
 export async function handleShopifyTrackingWebhook(request: Request): Promise<Response> {
   if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
-  const webhookSecret = process.env.SHOPIFY_TRACKING_WEBHOOK_SECRET;
+  const webhookSecret = process.env.SHOPIFY_TRACKING_WEBHOOK_SECRET || process.env.SHOPIFY_ADMIN_CLIENT_SECRET;
   const signingSecret = process.env.TRACKING_SIGNING_SECRET;
   if (!webhookSecret || !signingSecret || signingSecret.length < 32) return json({ error: "Tracking webhook is not configured." }, 503);
   const shop = (request.headers.get("x-shopify-shop-domain") || "").toLowerCase();

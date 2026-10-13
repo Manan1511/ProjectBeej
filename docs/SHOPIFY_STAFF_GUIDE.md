@@ -44,7 +44,7 @@ With first-launch COD disabled, ship only under the merchant’s approved dispat
 
 - Give each staff member their own Shopify account and only the permissions needed for their role.
 - Keep Storefront and Admin tokens out of product/page content, browser code, screenshots, email, and source control.
-- The newsletter endpoint needs a separate server-only Admin token with `write_customers`; do not put an Admin `shpat_` token in the Storefront token setting.
+- The server uses the installed Shopify Admin app with `read_orders` and `write_customers`; client credentials stay in server settings. Do not put an Admin token in the Storefront token setting.
 - Do not enable COD or Amazon MCF as part of ordinary catalog edits. Those workflows need separate merchant approval and fulfillment testing.
 
 ## Official Shopify references
