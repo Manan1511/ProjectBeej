@@ -8,3 +8,5 @@
 
 [build.environment]
   NODE_VERSION = "22"
+  # These are public storefront settings, not credentials. Keep scanning all real secrets.
+  SECRETS_SCAN_OMIT_KEYS = "SHOPIFY_STORE_DOMAIN,SITE_URL,SHOPIFY_MODE,SHOPIFY_API_VERSION,SHOPIFY_CHECKOUT_ORIGINS"
