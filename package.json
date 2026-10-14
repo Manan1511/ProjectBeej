@@ -18,6 +18,7 @@
   "dependencies": {
     "@fontsource-variable/outfit": "^5.2.8",
     "@fontsource/anton": "^5.2.8",
+    "@fontsource/dm-serif-display": "^5.3.0",
     "@shopify/hydrogen-react": "2026.4.4",
     "@supabase/supabase-js": "2.117.3",
     "@tailwindcss/postcss": "^4.1.0",
