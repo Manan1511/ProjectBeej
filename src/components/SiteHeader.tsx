@@ -20,11 +20,12 @@ export async function SiteHeader({ settings }: { settings: import("@/lib/types")
       <header className="site-header">
         <nav className="nav-wrap" aria-label="Main navigation">
           <div className="nav-links nav-left">
+            <Link href="/">Home</Link>
             <Link href="/shop">Shop</Link>
             <Link href="/about">Our story</Link>
           </div>
           <Link className="brand-mark" href="/" aria-label="Project Beej home">
-            <Image src="/assets/logo-wordmark.png" alt="Project Beej" fill sizes="150px" priority />
+            <Image src="/assets/logo-wordmark.png" alt="Project Beej" fill sizes="150px" loading="eager" />
           </Link>
           <div className="nav-links nav-right">
             <Link className="bag-link" href="/cart" aria-label={`Bag, ${count} items`}>

@@ -6,7 +6,7 @@ import { ConsentSettingsButton, TrackedOutboundLink } from "@/components/Tracked
 export function SiteFooter({ settings }: { settings: SiteSettings }) {
   const email = settings.contactEmail || "hello@projectbeej.com";
   return (
-    <footer className="site-footer">
+    <footer className="site-footer artifact-footer">
       <div className="footer-main">
         <Link href="/" className="footer-logo" aria-label="Project Beej home">
           <Image src="/assets/logo-wordmark.png" alt="Project Beej" fill sizes="(max-width: 760px) 120px, 150px" />
@@ -34,7 +34,7 @@ export function SiteFooter({ settings }: { settings: SiteSettings }) {
         </div>
       </div>
       <div className="footer-bottom">
-        <span>Small seeds. Big feels.</span>
+        <span>Good things grow from small seeds.</span>
         <span>© {new Date().getFullYear()} Project Beej</span>
       </div>
     </footer>
