@@ -73,9 +73,9 @@ export function ProductDetail({ product, faqs, reviews, related, initialVariantI
 
   return (
     <>
-      <div className="product-page">
+      <div className="product-page artifact-product-shell">
         <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/shop">Shop</Link><span>/</span><Link href={product.productType === "Ready to Roast" ? "/collections/ready-to-roast" : "/collections/roasted-makhana"}>{product.productType}</Link><span>/</span><span aria-current="page">{product.title}</span></nav>
-        <div className="product-detail-grid">
+        <div className="product-detail-grid artifact-product-layout">
           <div className="product-gallery">
             <div className="product-main-image" style={{ "--product-tint": skin.tint } as React.CSSProperties}>
               {product.images[activeImage] ? <Image src={product.images[activeImage].url} alt={product.images[activeImage].alt} fill sizes="(max-width: 760px) 100vw, 54vw" /> : <Image className="product-fallback-mascot" src={skin.mascot} alt="" fill sizes="(max-width: 760px) 100vw, 54vw" />}
@@ -86,7 +86,7 @@ export function ProductDetail({ product, faqs, reviews, related, initialVariantI
               </button>)}
             </div>
           </div>
-          <div className="product-information">
+          <div className="product-information artifact-product-information">
             <span className="eyebrow">{product.productType}</span>
             <h1>{product.title}</h1>
             <div className="detail-price-row"><strong>{formatINR(price.amount)}</strong>{product.preview ? <span className="draft-label">Draft price</span> : <span className="detail-currency">{price.currencyCode}</span>}</div>
@@ -118,6 +118,18 @@ export function ProductDetail({ product, faqs, reviews, related, initialVariantI
             </section>
           </div>
         </div>
+
+        <section className="mascot-feature" aria-label="Meet the Project Beej snack squad">
+          <div className="mascot-feature-art" style={{ "--product-tint": skin.tint } as React.CSSProperties}>
+            <Image src={skin.mascot} alt="" width={220} height={220} />
+          </div>
+          <div className="mascot-feature-copy">
+            <span className="eyebrow">{skin.player}</span>
+            <h2>Meet your snack sidekick.</h2>
+            <p>{skin.player} is here to bring a little more character to your snack break.</p>
+          </div>
+          <span className="mascot-feature-mark" aria-hidden="true">✳</span>
+        </section>
 
         <section className="reviews-section">
           <div><span className="eyebrow">The snack squad</span><h2>Real notes from real snackers</h2></div>

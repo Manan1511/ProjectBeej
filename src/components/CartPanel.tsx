@@ -95,7 +95,7 @@ export function CartPanel({ initialCart, shippingConfigured }: { initialCart: Sh
   }
 
   if (!cart || cart.totalQuantity === 0) {
-    return <div className="empty-cart">
+    return <div className="empty-cart artifact-cart-empty">
       <Image src="/assets/squad-runner-hq.png" alt="" width={120} height={120} />
       <p className="eyebrow">Good things start small</p>
       <h2>Your bag is empty</h2>
@@ -106,7 +106,7 @@ export function CartPanel({ initialCart, shippingConfigured }: { initialCart: Sh
   }
 
   return (
-    <div className="cart-layout">
+    <div className="cart-layout artifact-cart-filled">
       <div className="cart-list">
         {cart.lines.map((line) => (
           <article className="cart-line" key={line.id}>

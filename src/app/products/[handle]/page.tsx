@@ -75,5 +75,5 @@ export default async function ProductPage({ params, searchParams }: Params) {
   const rawVariant = Array.isArray(query.variant) ? query.variant[0] : query.variant;
   const selectedVariantId = rawVariant && /^\d{1,20}$/.test(rawVariant) ? product.variants.find((variant) => numericShopifyId(variant.id) === rawVariant)?.id : undefined;
 
-  return <main id="main-content">{schema ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: escapeJsonLd(schema) }} /> : null}{breadcrumb ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: escapeJsonLd(breadcrumb) }} /> : null}<ProductDetail product={product} faqs={faqs} reviews={reviews} related={related} initialVariantId={selectedVariantId} /></main>;
+  return <main id="main-content" className="artifact-product-page">{schema ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: escapeJsonLd(schema) }} /> : null}{breadcrumb ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: escapeJsonLd(breadcrumb) }} /> : null}<ProductDetail product={product} faqs={faqs} reviews={reviews} related={related} initialVariantId={selectedVariantId} /></main>;
 }
