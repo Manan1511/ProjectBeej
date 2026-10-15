@@ -18,10 +18,10 @@ export const metadata: Metadata = {
 };
 
 const squad = [
-  { image: "squad-lifter-hq.png", name: "The Lifter", flavour: "Peri Peri" },
-  { image: "squad-skater-hq.png", name: "The Skater", flavour: "Cheese" },
-  { image: "squad-runner-hq.png", name: "The Striker", flavour: "Himalayan Salt & Pepper" },
-  { image: "squad-pickleball-hq.png", name: "The Smasher", flavour: "Pudina" },
+  { image: "squad-lifter-hq.png", name: "The Lifter", flavour: "Peri Peri", tagline: "For when you need a kick.", handle: "peri-peri", tone: "peri" },
+  { image: "squad-skater-hq.png", name: "The Skater", flavour: "Cheese", tagline: "For cruising through the afternoon.", handle: "cheese", tone: "cheese" },
+  { image: "squad-runner-hq.png", name: "The Striker", flavour: "Himalayan Salt & Pepper", tagline: "For the classic play, every time.", handle: "himalayan-salt-pepper", tone: "salt-pepper" },
+  { image: "squad-pickleball-hq.png", name: "The Smasher", flavour: "Pudina", tagline: "For a fresh rally between meetings.", handle: "pudina", tone: "pudina" },
 ];
 
 const gallery = [
@@ -32,12 +32,20 @@ const gallery = [
 ];
 
 const values = [
-  { number: "01", title: "Start with a seed", body: "A small idea can make room for something new." },
-  { number: "02", title: "Make it memorable", body: "Good flavour and a little character belong at the same table." },
-  { number: "03", title: "Grow together", body: "The best snack breaks leave space for one more person." },
+  { number: "01", title: "Nature first", body: "Nature gives us the seed. We add the flavour." },
+  { number: "02", title: "Big on flavour", body: "Bold flavour comes first. Every seasoning earns its place." },
+  { number: "03", title: "Grown with purpose", body: "Small, mindful choices help shape a brand with purpose." },
 ];
 
-async function homeData(): Promise<{ products: BeejProduct[]; settings: Awaited<ReturnType<typeof getSiteSettings>> }> {
+const collectionCards = [
+  { handle: "roasted-makhana", title: "Roasted Makhana", description: "4 bold flavours", image: "/assets/pudina-pop.jpg" },
+  { handle: "ready-to-roast", title: "Ready to Roast", description: "Plain makhana, your way", image: "/assets/makhana-pond.jpg" },
+];
+
+async function homeData(): Promise<{
+  featuredProducts: BeejProduct[];
+  settings: Awaited<ReturnType<typeof getSiteSettings>>;
+}> {
   const buyerIp = await requestBuyerIp();
   const [settings, productResult] = await Promise.all([
     getSiteSettings(buyerIp),
@@ -53,27 +61,16 @@ async function homeData(): Promise<{ products: BeejProduct[]; settings: Awaited<
       return rank(a.handle) - rank(b.handle);
     })
     : productResult;
-  return { settings, products: products.slice(0, 5) };
-}
-
-function getCollectionShortcuts(products: BeejProduct[]) {
-  const handles = Array.from(new Set(products.flatMap((product) => product.collectionHandles))).slice(0, 3);
-  return handles.map((handle) => {
-    const product = products.find((item) => item.collectionHandles.includes(handle));
-    const title = handle
-      .split(/[-_]/)
-      .filter(Boolean)
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-    return { handle, title, image: product?.images[0] };
-  });
+  return {
+    settings,
+    featuredProducts: products.filter((product) => product.handle !== "classic-makhana").slice(0, 4),
+  };
 }
 
 export default async function HomePage() {
-  const { products, settings } = await homeData();
+  const { featuredProducts, settings } = await homeData();
   const siteUrl = getPublicSiteUrl();
   const organization = siteUrl ? { "@context": "https://schema.org", "@type": "Organization", name: "Project Beej", url: siteUrl, ...(settings.instagramUrl ? { sameAs: [settings.instagramUrl] } : {}), ...(settings.contactEmail ? { email: settings.contactEmail } : {}) } : null;
-  const collections = getCollectionShortcuts(products);
 
   return (
     <main id="main-content" className="artifact-home">
@@ -113,10 +110,16 @@ export default async function HomePage() {
         </div>
         <div className="squad-grid">
           {squad.map((member) => (
-            <article key={member.name}>
-              <div><Image src={`/assets/${member.image}`} alt={`${member.name} mascot`} fill sizes="(max-width: 640px) 50vw, (max-width: 980px) 25vw, 22vw" /></div>
-              <span>{member.name}</span>
-              <h3>{member.flavour}</h3>
+            <article className="squad-card" data-squad-tone={member.tone} key={member.name}>
+              <div className="squad-card-art">
+                <Image src={`/assets/${member.image}`} alt={`${member.name} mascot`} className="squad-card-mascot" fill sizes="(max-width: 360px) 88vw, (max-width: 560px) 50vw, (max-width: 1100px) 44vw, 24vw" />
+              </div>
+              <div className="squad-card-copy">
+                <span>{member.name}</span>
+                <h3>{member.flavour}</h3>
+                <p>{member.tagline}</p>
+                <Link className="squad-card-link" href={`/products/${member.handle}`} aria-label={`Shop ${member.flavour}`}>Shop now</Link>
+              </div>
             </article>
           ))}
         </div>
@@ -127,52 +130,44 @@ export default async function HomePage() {
           <div><span className="eyebrow">A flavour for every kind of break</span><h2 id="featured-title">Find your <em>favourite.</em></h2></div>
           <Link className="text-link" href="/shop">Shop all snacks <span aria-hidden="true">↗</span></Link>
         </div>
-        <ProductGrid products={products} listName="Home featured" />
-        <div className="more-growing">
-          <Image src="/assets/seed.png" alt="" width={54} height={54} />
-          <div><h3>More growing soon</h3><p>New things are taking shape. Stay close for the next drop.</p></div>
-          <Link className="text-link" href="/shop#shop-search">Explore the range <span aria-hidden="true">↗</span></Link>
-        </div>
+        <ProductGrid products={featuredProducts} listName="Home featured" />
       </section>
 
-      <section className="category-shortcuts artifact-categories" aria-labelledby="categories-title">
-        <div className="section-heading">
-          <div><span className="eyebrow">Pick a path</span><h2 id="categories-title">Good things, this way.</h2></div>
-          <Link className="text-link" href="/shop">Browse the shop <span aria-hidden="true">↗</span></Link>
-        </div>
+      <section className="category-shortcuts artifact-categories" aria-label="Explore the Beej range">
         <div className="category-shortcut-grid">
-          {collections.length ? collections.map((collection) => (
-            <Link className="category-shortcut" href={`/collections/${encodeURIComponent(collection.handle)}`} key={collection.handle}>
-              <span className="category-shortcut-image">
-                {collection.image ? <Image src={collection.image.url} alt={collection.image.alt} fill sizes="(max-width: 760px) 90vw, 33vw" /> : null}
+          {collectionCards.map((collection) => (
+            <Link className="category-shortcut" href={`/collections/${collection.handle}`} key={collection.handle}>
+              <Image className="category-shortcut-photo" src={collection.image} alt="" fill sizes="(max-width: 760px) 92vw, 33vw" />
+              <span className="category-shortcut-shade" aria-hidden="true" />
+              <span className="category-shortcut-copy">
+                <span className="category-shortcut-title">{collection.title}</span>
+                <span className="category-shortcut-description">{collection.description}<span aria-hidden="true">→</span></span>
               </span>
-              <span className="category-shortcut-copy"><span>Explore collection</span><strong>{collection.title}</strong><span aria-hidden="true">↗</span></span>
             </Link>
-          )) : (
-            <Link className="category-shortcut category-shortcut-featured" href="/shop">
-              <span className="category-shortcut-image"><Image src="/assets/pudina-pop.jpg" alt="Project Beej snack pack in a bright product scene" fill sizes="(max-width: 760px) 90vw, 50vw" /></span>
-              <span className="category-shortcut-copy"><span>See what is in store</span><strong>Shop the current range</strong><span aria-hidden="true">↗</span></span>
-            </Link>
-          )}
+          ))}
+          <article className="category-shortcut category-shortcut-coming-soon">
+            <span className="category-shortcut-seed"><Image src="/assets/seed.png" alt="" width={68} height={68} /></span>
+            <div className="category-shortcut-coming-copy">
+              <h2>More sprouting soon</h2>
+              <p>New snacks are growing in the Beej kitchen.</p>
+            </div>
+          </article>
         </div>
       </section>
 
       <section className="story-band artifact-story" id="story" aria-labelledby="story-title">
         <div className="story-copy">
-          <span className="eyebrow">Our story</span>
-          <h2 id="story-title">Rooted in nature.<br /><span>Growing with purpose.</span></h2>
-          <p>{settings.homeCopy?.storyDescription || "Good things can start small. Project Beej is growing a snack brand with flavour, character, and room for everyone at the table."}</p>
-          <Link className="button button-outline" href="/about">Get to know us</Link>
+          <h2 id="story-title">Rooted in nature. <span>Growing with purpose.</span></h2>
+          <p>Project Beej was born from a simple belief: the smallest choices shape the biggest transformations. We celebrate mindful snacking with simple ingredients, bold flavour, and a little character.</p>
+          <Link className="button button-outline" href="/about">Read our story</Link>
         </div>
         <div className="story-image artifact-story-image">
-          <Image src="/assets/seedlings.jpg" alt="Young green seedlings growing in soil" fill sizes="(max-width: 760px) 100vw, 50vw" />
-          <Image className="story-image-detail" src="/assets/makhana-pond.jpg" alt="Project Beej makhana beside a lotus pond" fill sizes="(max-width: 760px) 42vw, 22vw" />
+          <Image className="artifact-story-seedling" src="/assets/seedlings.jpg" alt="Young seedlings emerging from soil in warm light" width={1024} height={683} sizes="(max-width: 760px) calc(100vw - 36px), (max-width: 980px) 40vw, 36vw" />
         </div>
       </section>
 
       <section className="pillars-section artifact-values" aria-labelledby="values-title">
-        <span className="eyebrow">Small beginnings. Good company.</span>
-        <h2 id="values-title">What we want to grow.</h2>
+        <h2 id="values-title">What every Beej snack stands for</h2>
         <div className="pillars-grid">
           {values.map((value) => (
             <article key={value.number}><div className="pillar-number">{value.number}</div><h3>{value.title}</h3><p>{value.body}</p></article>

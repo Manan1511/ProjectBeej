@@ -47,33 +47,33 @@
 - Keep `BannerSlider({ settings }: { settings: SiteSettings })` and existing `settings.slides` data. Render the active slide and next slide as the two hero portraits, with the existing previous/next controls selecting the pair.
 - Keep existing `HomePage()` data loading, featured product ordering, newsletter form, gallery, tracking, and Shopify settings behavior.
 
-- [x] **Step 1: Write failing home-content tests**
+- [ ] **Step 1: Write failing home-content tests**
 
 In `src/app/reference-home.test.ts`, mock only the existing data calls as `src/app/home-featured-products.test.ts` does. Assert the rendered HomePage tree contains “Good things grow from small seeds.”, “Shop now”, and “Our story”; that the feature sections follow the artifact order; and that fixed copy does not contain unsupported health, nutrition, allergen, tax, or origin claims. Also add the new `.artifact-home-hero` and `.artifact-benefit-track` motion assertions to `src/app/motion.test.ts`, including reduced-motion and focus-pause behavior.
 
-- [x] **Step 2: Run the new tests and verify they fail on the current copy, section order, and hero selector**
+- [ ] **Step 2: Run the new tests and verify they fail on the current copy, section order, and hero selector**
 
 Run: `npm test -- src/app/reference-home.test.ts src/app/motion.test.ts`
 Expected: FAIL because HomePage still renders the superseded headline and section order, and the new hero selector does not exist yet.
 
-- [x] **Step 3: Implement artifact Home structure and copy**
+- [ ] **Step 3: Implement artifact Home structure and copy**
 
 Reshape `src/app/page.tsx` to the artifact sequence: hero, benefits strip, team, featured products, category shortcuts, story, values, community gallery, newsletter. Keep live product data and existing forms. Use the approved headline and safe artifact copy. Replace unsupported health language and all em dashes. Update root metadata to remove unsupported “wholesome” wording. Add `@fontsource/dm-serif-display` for the self-hosted editorial display face; retain Outfit for utility text.
 
-- [x] **Step 4: Make the hero a two-portrait slider**
+- [ ] **Step 4: Make the hero a two-portrait slider**
 
 Update `BannerSlider` to show two portrait images from `settings.slides` or the existing local defaults. Previous/next changes the displayed pair, preserves promotion tracking, and keeps visible accessible controls. Keep rotation user-controlled; do not add autoplay.
 
-- [x] **Step 5: Implement the Home visual system in `src/app/globals.css`**
+- [ ] **Step 5: Implement the Home visual system in `src/app/globals.css`**
 
 Match the artifact's cream, olive, and sage palette, editorial serif display type, sans-serif utility type, dark radial hero, paired photo frames, moving pale-sage benefits strip, section spacing, and responsive order. Use CSS transitions and keyframes already supported by the stack. Respect reduced motion and do not place decoration over text or purchase controls.
 
-- [x] **Step 6: Run focused tests**
+- [ ] **Step 6: Run focused tests**
 
 Run: `npm test -- src/app/reference-home.test.ts src/app/motion.test.ts src/app/home-featured-products.test.ts`
 Expected: PASS, including unchanged configured featured-product ordering.
 
-- [x] **Step 7: Commit the verified Home milestone**
+- [ ] **Step 7: Commit the verified Home milestone**
 
 Commit message: `feat: match homepage to approved Beej artifact`
 
@@ -92,29 +92,29 @@ Commit message: `feat: match homepage to approved Beej artifact`
 - Keep `SiteHeader({ settings }: { settings: SiteSettings })`, Shopify cart count, `MobileNav({ count }: { count: number })`, `ProductGrid`, `StoreSearchForm`, `getProducts`, and `getShopifyPage` contracts.
 - Keep footer contact, policy, consent, WhatsApp, and social destinations available while matching the artifact's compact visual treatment.
 
-- [x] **Step 1: Write failing Shop and About route tests**
+- [ ] **Step 1: Write failing Shop and About route tests**
 
 In `src/app/reference-shop-about.test.ts`, mock Shopify data calls and assert Shop renders the artifact's “Shop all” heading and on-page search form while retaining filters and sorting. Assert About renders “Rooted in nature. Growing with purpose.”, its origin-story hierarchy, and no unsupported fixed health/nutrition/allergen claims. Assert both routes use the new `.artifact-shop-hero` and `.artifact-about-hero` composition hooks.
 
-- [x] **Step 2: Run the route test and verify it fails on the old layout copy**
+- [ ] **Step 2: Run the route test and verify it fails on the old layout copy**
 
 Run: `npm test -- src/app/reference-shop-about.test.ts`
 Expected: FAIL because Shop's heading punctuation and the new Shop/About composition hooks do not yet match the approved design.
 
-- [x] **Step 3: Match shared navigation and footer**
+- [ ] **Step 3: Match shared navigation and footer**
 
 Update desktop navigation to Home, Shop, and Our Story with the centered Project Beej wordmark and live bag count. Match the artifact's olive header and compact announcement strip. On mobile, keep the same destinations and bag count, remove the Contact link from the menu, and close the menu after route selection. Restyle the shared footer to the artifact while retaining working contact, legal, consent, and social links.
 
-- [x] **Step 4: Match Shop and About page composition**
+- [ ] **Step 4: Match Shop and About page composition**
 
 Style Shop with the dark foliage masthead, clear category filters, sort, on-page search, and Shopify-driven cards. Keep counts and availability based on live Shopify results. Style About with the seedling hero, story, supplied photo collage, values, and shop CTA. Use supported copy only and keep contact/policy routes unchanged.
 
-- [x] **Step 5: Run focused tests**
+- [ ] **Step 5: Run focused tests**
 
 Run: `npm test -- src/app/reference-shop-about.test.ts src/lib/product-search.test.ts src/app/home-featured-products.test.ts`
 Expected: PASS, including Shop search/filter behavior and Home product ordering.
 
-- [x] **Step 6: Commit the shared shell and discovery milestone**
+- [ ] **Step 6: Commit the shared shell and discovery milestone**
 
 Commit message: `feat: align Beej navigation and discovery pages`
 
@@ -133,29 +133,29 @@ Commit message: `feat: align Beej navigation and discovery pages`
 - Keep the existing ProductDetail props, Shopify variant and quantity mutations, `add_to_cart`, `begin_checkout`, gallery controls, FAQ/review parsing, related product list, and variant query parameter.
 - Keep `CartPanel({ initialCart, shippingConfigured })`, current cart API routes, `readStoredCartId`, `getShopifyCart`, checkout URL creation, and cart tracking events.
 
-- [x] **Step 1: Write failing route-contract tests**
+- [ ] **Step 1: Write failing route-contract tests**
 
 In `src/app/reference-commerce-pages.test.ts`, mock only Shopify reads. Assert ProductPage passes the selected numeric `?variant=` to ProductDetail and passes only Shopify-derived product data. Assert CartPage passes the real initial cart into CartPanel and never hard-codes the artifact's sample shipping threshold or prices. Assert product and cart render the new `.artifact-product-layout`, `.artifact-cart-empty`, and `.artifact-cart-filled` composition hooks. In `src/components/commerce-presentation.test.ts`, server-render ProductDetail and ProductGrid with preview and unavailable fixtures; assert purchase actions stay disabled, unsupported claim badges stay absent, and the new artifact layout hooks are present.
 
-- [x] **Step 2: Run the route-contract tests and verify they fail for any missing reference content**
+- [ ] **Step 2: Run the route-contract tests and verify they fail for any missing reference content**
 
 Run: `npm test -- src/app/reference-commerce-pages.test.ts src/components/commerce-presentation.test.ts`
 Expected: FAIL on the new Product and Cart composition hooks before component changes.
 
-- [x] **Step 3: Restyle Product detail around the artifact**
+- [ ] **Step 3: Restyle Product detail around the artifact**
 
 Use a large responsive product gallery beside a clear Shopify-backed purchase panel, then the mascot feature and related products. Keep variant availability, quantity limits, Add to Bag, independent Buy Now, true FAQs/reviews, and honest empty states. Remove artifact claim badges unless verified structured Shopify data supports them. Keep the packaging prompt neutral when ingredient/allergen data is absent.
 
-- [x] **Step 4: Restyle Cart empty and populated states**
+- [ ] **Step 4: Restyle Cart empty and populated states**
 
 Match the empty-bag illustration, sage panel, and clear Shop CTA. Give the populated cart the same typography, spacing, and restrained olive/sage treatment while preserving live line items, quantity updates, removal, totals, messages, and Shopify-hosted checkout. Do not present the reference's sample shipping promise unless the current Shopify configuration confirms it.
 
-- [x] **Step 5: Run commerce and route tests**
+- [ ] **Step 5: Run commerce and route tests**
 
 Run: `npm test -- src/app/reference-commerce-pages.test.ts src/lib/cart-actions.test.ts src/lib/commerce.test.ts src/lib/storefront.test.ts`
 Expected: PASS, including cart recovery/mutation and existing product data behavior.
 
-- [x] **Step 6: Commit the commerce-page milestone**
+- [ ] **Step 6: Commit the commerce-page milestone**
 
 Commit message: `feat: align product and cart pages to Beej artifact`
 
@@ -165,7 +165,7 @@ Commit message: `feat: align product and cart pages to Beej artifact`
 - Modify only the files above if screenshot review finds a defect.
 - Run the Impeccable detector over changed UI files once after the final correction.
 
-- [x] **Step 1: Run the full automated checks**
+- [ ] **Step 1: Run the full automated checks**
 
 Run: `npm test`, `npm run typecheck`, `npm run lint`, and `npm run build`.
 Expected: all commands pass with no new warnings or TypeScript errors.
@@ -179,7 +179,7 @@ Expected: Home, Shop, About, a published Product, and Cart render from the curre
 
 Inspect Home, Shop, Product, About, empty Cart, and populated Cart at 1440px, 768px, and 390px widths. Test keyboard navigation, mobile menu dismissal, slider buttons, reduced motion, product filters/search, variants, Add to Bag, Buy Now, cart update/removal, and Shopify checkout URL handoff. Correct all material visual or interaction defects, then run one confirmation pass.
 
-- [x] **Step 4: Run Impeccable's manual detector once**
+- [ ] **Step 4: Run Impeccable's manual detector once**
 
 Run: `C:\Users\manan\.agents\skills\impeccable\scripts\impeccable.cmd detect --json src/app/layout.tsx src/app/page.tsx src/app/shop/page.tsx src/app/about/page.tsx 'src/app/products/[handle]/page.tsx' src/app/cart/page.tsx src/components/SiteHeader.tsx src/components/MobileNav.tsx src/components/SiteFooter.tsx src/components/BannerSlider.tsx src/components/ProductDetail.tsx src/components/CartPanel.tsx src/app/globals.css`
 Expected: inspect all findings and fix material issues before final review.
