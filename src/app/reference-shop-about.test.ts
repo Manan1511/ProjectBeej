@@ -96,6 +96,28 @@ describe("Shop and About match the approved artifact", () => {
     expect(collectClasses(children).some((value) => value.split(/\s+/).includes("artifact-shop-hero"))).toBe(true);
   });
 
+  it("keeps category filters and sorting available on search results", async () => {
+    vi.mocked(getProducts).mockResolvedValue([{
+      id: "gid://shopify/Product/121",
+      handle: "pudina",
+      title: "Pudina",
+      description: "A Shopify-managed product description.",
+      productType: "Roasted Makhana",
+      images: [],
+      variants: [],
+      price: { amount: "417.00", currencyCode: "INR" },
+      availableForSale: true,
+      collectionHandles: ["roasted-makhana"],
+      metafields: {},
+      preview: false,
+    }]);
+    const page = await ShopPage({ searchParams: Promise.resolve({ q: "pudina" }) });
+    const grid = findElements(childrenOf(page), ProductGrid)[0] as ReactElement<{ filters?: boolean; products: unknown[] }> | undefined;
+
+    expect(grid?.props.filters).toBe(true);
+    expect(grid?.props.products).toHaveLength(1);
+  });
+
   it("uses the artifact About hierarchy without unsupported product or origin claims", async () => {
     const page = await AboutPage();
     const children = childrenOf(page);

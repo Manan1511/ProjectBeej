@@ -1,7 +1,7 @@
 import "server-only";
 import { readCartCookie } from "@/lib/commerce";
 import type { BeejProduct, CartLine, ProductFaq, ProductReview, ShopifyCart, SiteSettings } from "@/lib/types";
-import { parseHomeCopy } from "@/lib/storefront-settings";
+import { parseAnnouncement, parseHomeCopy } from "@/lib/storefront-settings";
 import type { ConsentPreferences } from "@/lib/tracking-types";
 
 const API_VERSION = process.env.SHOPIFY_API_VERSION || "2026-10";
@@ -232,7 +232,8 @@ export async function getSiteSettings(buyerIp?: string | null): Promise<SiteSett
     };
     const homeCopy = parseHomeCopy(parsed.homeCopy);
     if (homeCopy) settings.homeCopy = homeCopy;
-    if (typeof parsed.announcement === "string") settings.announcement = parsed.announcement.slice(0, 160);
+    const announcement = parseAnnouncement(parsed.announcement);
+    if (announcement) settings.announcement = announcement;
     if (typeof parsed.contactEmail === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parsed.contactEmail)) settings.contactEmail = parsed.contactEmail;
     if (typeof parsed.instagramUrl === "string" && /^https:\/\/(www\.)?instagram\.com\//.test(parsed.instagramUrl)) settings.instagramUrl = parsed.instagramUrl;
     if (typeof parsed.whatsappUrl === "string" && /^https:\/\/(wa\.me|api\.whatsapp\.com)\//.test(parsed.whatsappUrl)) settings.whatsappUrl = parsed.whatsappUrl;

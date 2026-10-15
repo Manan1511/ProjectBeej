@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseHomeCopy } from "./storefront-settings";
+import { parseAnnouncement, parseHomeCopy } from "./storefront-settings";
 
 describe("Shopify-managed homepage copy", () => {
   it("trims supported text fields and ignores unknown or non-text values", () => {
@@ -20,5 +20,20 @@ describe("Shopify-managed homepage copy", () => {
     expect(parseHomeCopy(undefined)).toBeUndefined();
     expect(parseHomeCopy([])).toBeUndefined();
     expect(parseHomeCopy({})).toBeUndefined();
+  });
+
+  it("drops copy with unverified health, ingredient, origin, delivery, or price claims", () => {
+    const parsed = parseHomeCopy({
+      heroDescription: "Wholesome snacks with high protein and no preservatives.",
+      storyDescription: "Made in India and delivered free over ₹499.",
+      heroShopLabel: "Shop now",
+    });
+
+    expect(parsed).toEqual({ heroShopLabel: "Shop now" });
+  });
+
+  it("applies the same content guard to the announcement", () => {
+    expect(parseAnnouncement("Welcome to snacking that’s rooted in nature 🌱")).toBe("Welcome to snacking that’s rooted in nature 🌱");
+    expect(parseAnnouncement("Free delivery on every order")).toBeUndefined();
   });
 });

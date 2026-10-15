@@ -22,15 +22,27 @@ const homeCopyLimits: Record<keyof HomeCopy, number> = {
   newsletterDescription: 320,
 };
 
+const unverifiedClaimPattern = /\b(?:healthy|healthier|health|wholesome|nutrition(?:al)?|nutrient(?:s)?|ingredient(?:s)?|allergen(?:s)?|gluten[- ]free|high[- ](?:protein|fibre|fiber)|protein[- ]rich|low[- ](?:fat|sugar|calorie(?:s)?)|jain[- ]friendly|vegan|organic|preservative[- ]free|no preservatives?|all[- ]natural|free shipping|free delivery|cash on delivery|tax(?:es)? included|made in india|grown in india|packed in india|sourced from india)\b/i;
+const priceClaimPattern = /(?:₹|INR\s*)\s*[\d,.]+/i;
+
+function cleanApprovedCopy(value: unknown, limit: number): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const cleaned = value.trim().slice(0, limit);
+  if (!cleaned || unverifiedClaimPattern.test(cleaned) || priceClaimPattern.test(cleaned)) return undefined;
+  return cleaned;
+}
+
+export function parseAnnouncement(value: unknown): string | undefined {
+  return cleanApprovedCopy(value, 160);
+}
+
 export function parseHomeCopy(value: unknown): HomeCopy | undefined {
   if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
 
   const source = value as Record<string, unknown>;
   const copy: HomeCopy = {};
   for (const [key, limit] of Object.entries(homeCopyLimits) as Array<[keyof HomeCopy, number]>) {
-    const text = source[key];
-    if (typeof text !== "string") continue;
-    const cleaned = text.trim().slice(0, limit);
+    const cleaned = cleanApprovedCopy(source[key], limit);
     if (cleaned) copy[key] = cleaned;
   }
 
