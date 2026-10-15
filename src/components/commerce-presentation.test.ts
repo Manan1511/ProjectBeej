@@ -77,6 +77,21 @@ describe("commerce presentation preserves Shopify purchase safeguards", () => {
     expect(markup).not.toMatch(/gluten[ -]?free|high[ -]?protein|jain-friendly|healthy/i);
   });
 
+  it("keeps both purchase actions disabled when the Shopify variant is unavailable", () => {
+    const markup = renderToStaticMarkup(createElement(ProductDetail, {
+      product: product(false, false),
+      faqs: [],
+      reviews: [],
+      related: [],
+    }));
+    const addButton = markup.match(/<button[^>]*>Add to bag<\/button>/)?.[0] ?? "";
+    const buyButton = markup.match(/<button[^>]*>Buy now<\/button>/)?.[0] ?? "";
+
+    expect(addButton).toContain("disabled");
+    expect(buyButton).toContain("disabled");
+    expect(markup).toContain("Currently unavailable");
+  });
+
   it("does not offer card purchase buttons for preview or unavailable products", () => {
     const markup = renderToStaticMarkup(createElement(ProductGrid, {
       products: [product(true, true), product(false, false)],
