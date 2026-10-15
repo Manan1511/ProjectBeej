@@ -22,13 +22,14 @@ const homeCopyLimits: Record<keyof HomeCopy, number> = {
   newsletterDescription: 320,
 };
 
-const unverifiedClaimPattern = /\b(?:healthy|healthier|health|wholesome|nutrition(?:al)?|nutrient(?:s)?|ingredient(?:s)?|allergen(?:s)?|gluten[- ]free|high[- ](?:protein|fibre|fiber)|protein[- ]rich|low[- ](?:fat|sugar|calorie(?:s)?)|jain[- ]friendly|vegan|organic|preservative[- ]free|no preservatives?|all[- ]natural|free shipping|free delivery|cash on delivery|tax(?:es)? included|made in india|grown in india|packed in india|sourced from india)\b/i;
+const unverifiedClaimPattern = /\b(?:healthy|healthier|health|wholesome|nutrition(?:al)?|nutrient(?:s)?|ingredient(?:s)?|allergen(?:s)?|gluten[- ]free|high[- ](?:in[- ])?(?:protein|fibre|fiber)|protein[- ]rich|low[- ](?:in[- ])?(?:fat|sugar|calorie(?:s)?)|jain[- ]friendly|vegan|organic|preservative[- ]free|no preservatives?|all[- ]natural|free shipping|free delivery|cash on delivery|tax(?:es)? included|made in india|grown in india|packed in india|sourced from india)\b/i;
+const discountClaimPattern = /\b\d{1,3}\s*(?:%|percent)\s*(?:off|discount|savings?)\b|\bsave\s+\d{1,3}\s*(?:%|percent)/i;
 const priceClaimPattern = /(?:₹|INR\s*)\s*[\d,.]+/i;
 
 function cleanApprovedCopy(value: unknown, limit: number): string | undefined {
   if (typeof value !== "string") return undefined;
   const cleaned = value.trim().slice(0, limit);
-  if (!cleaned || unverifiedClaimPattern.test(cleaned) || priceClaimPattern.test(cleaned)) return undefined;
+  if (!cleaned || unverifiedClaimPattern.test(cleaned) || discountClaimPattern.test(cleaned) || priceClaimPattern.test(cleaned)) return undefined;
   return cleaned;
 }
 
@@ -47,4 +48,19 @@ export function parseHomeCopy(value: unknown): HomeCopy | undefined {
   }
 
   return Object.keys(copy).length ? copy : undefined;
+}
+
+export function parseStorefrontSlides(value: unknown): Array<{ src: string; alt: string }> {
+  if (!Array.isArray(value)) return [];
+
+  return value.flatMap((slide) => {
+    if (!slide || typeof slide !== "object") return [];
+
+    const item = slide as Record<string, unknown>;
+    if (typeof item.image !== "string") return [];
+
+    const src = item.image.startsWith("/assets/") || item.image.startsWith("https://cdn.shopify.com/") ? item.image : "";
+    const alt = parseAnnouncement(item.alt);
+    return src && alt ? [{ src, alt }] : [];
+  }).slice(0, 8);
 }

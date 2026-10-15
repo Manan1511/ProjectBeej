@@ -1,7 +1,7 @@
 import "server-only";
 import { readCartCookie } from "@/lib/commerce";
 import type { BeejProduct, CartLine, ProductFaq, ProductReview, ShopifyCart, SiteSettings } from "@/lib/types";
-import { parseAnnouncement, parseHomeCopy } from "@/lib/storefront-settings";
+import { parseAnnouncement, parseHomeCopy, parseStorefrontSlides } from "@/lib/storefront-settings";
 import type { ConsentPreferences } from "@/lib/tracking-types";
 
 const API_VERSION = process.env.SHOPIFY_API_VERSION || "2026-10";
@@ -238,13 +238,7 @@ export async function getSiteSettings(buyerIp?: string | null): Promise<SiteSett
     if (typeof parsed.instagramUrl === "string" && /^https:\/\/(www\.)?instagram\.com\//.test(parsed.instagramUrl)) settings.instagramUrl = parsed.instagramUrl;
     if (typeof parsed.whatsappUrl === "string" && /^https:\/\/(wa\.me|api\.whatsapp\.com)\//.test(parsed.whatsappUrl)) settings.whatsappUrl = parsed.whatsappUrl;
     if (Array.isArray(parsed.featuredHandles)) settings.featuredHandles = parsed.featuredHandles.filter((handle): handle is string => typeof handle === "string").slice(0, 20);
-    if (Array.isArray(parsed.slides)) settings.slides = parsed.slides.flatMap((slide) => {
-      if (!slide || typeof slide !== "object") return [];
-      const item = slide as Record<string, unknown>;
-      if (typeof item.image !== "string" || typeof item.alt !== "string") return [];
-      const src = item.image.startsWith("/assets/") || item.image.startsWith("https://cdn.shopify.com/") ? item.image : "";
-      return src ? [{ src, alt: item.alt.slice(0, 160) }] : [];
-    }).slice(0, 8);
+    if (Array.isArray(parsed.slides)) settings.slides = parseStorefrontSlides(parsed.slides);
     return settings;
   } catch {
     return {};
