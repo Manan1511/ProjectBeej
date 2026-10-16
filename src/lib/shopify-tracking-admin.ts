@@ -1,4 +1,4 @@
-import { getShopifyAdminAccessToken, getShopifyAdminStoreDomain } from "@/lib/shopify-admin-auth";
+import { getShopifyAdminAccessToken, getShopifyAdminStoreDomain } from "@/lib/shopify-admin-auth-core";
 
 type AdminResponse<T> = { data?: T; errors?: Array<{ message?: string }> };
 
