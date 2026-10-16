@@ -32,7 +32,10 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, them
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const settings = await getSiteSettings(await requestBuyerIp());
   const preview = getStorefrontMode() === "preview";
-  const trackingConfig = getPublicTrackingConfig(process.env, process.env.CONTEXT);
+  const trackingConfig = getPublicTrackingConfig(
+    process.env,
+    process.env.TRACKING_DEPLOY_CONTEXT || process.env.CONTEXT,
+  );
   return (
     <html lang="en" className="font-outfit">
       <body>

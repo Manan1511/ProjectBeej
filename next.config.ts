@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  env: {
+    TRACKING_DEPLOY_CONTEXT: process.env.CONTEXT ?? "",
+  },
   allowedDevOrigins: ["127.0.0.1"],
   poweredByHeader: false,
   compress: true,

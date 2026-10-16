@@ -28,7 +28,8 @@ function safeShopDomain(value: string | undefined): string {
 export function getPublicTrackingConfig(env: Environment, deployContext?: string): PublicTrackingConfig {
   const requestedMode = env.NEXT_PUBLIC_TRACKING_MODE;
   const mode: TrackingMode = requestedMode === "test" || requestedMode === "production" ? requestedMode : "off";
-  const permitted = mode === "test" || (mode === "production" && deployContext === "production");
+  const effectiveDeployContext = deployContext ?? env.TRACKING_DEPLOY_CONTEXT ?? env.CONTEXT;
+  const permitted = mode === "test" || (mode === "production" && effectiveDeployContext === "production");
   const testMode = mode === "test";
   const candidateGtm = permitted ? (testMode ? env.NEXT_PUBLIC_TEST_GTM_ID : env.NEXT_PUBLIC_GTM_ID) : undefined;
   const candidateGa4 = permitted ? (testMode ? env.NEXT_PUBLIC_TEST_GA4_MEASUREMENT_ID : env.NEXT_PUBLIC_GA4_MEASUREMENT_ID) : undefined;

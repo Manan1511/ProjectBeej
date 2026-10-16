@@ -31,4 +31,14 @@ describe("public tracking configuration", () => {
     expect(getPublicTrackingConfig(env, "deploy-preview").enabled).toBe(false);
     expect(getPublicTrackingConfig(env, "production")).toMatchObject({ enabled: true, gtmId: "GTM-PROD123" });
   });
+
+  it("uses the baked Netlify context when the runtime context is unavailable", () => {
+    const env = {
+      NEXT_PUBLIC_TRACKING_MODE: "production",
+      NEXT_PUBLIC_GTM_ID: "GTM-PROD123",
+      TRACKING_DEPLOY_CONTEXT: "production",
+    };
+    expect(getPublicTrackingConfig(env)).toMatchObject({ mode: "production", enabled: true, gtmId: "GTM-PROD123" });
+    expect(getPublicTrackingConfig({ ...env, TRACKING_DEPLOY_CONTEXT: "deploy-preview" }).enabled).toBe(false);
+  });
 });
