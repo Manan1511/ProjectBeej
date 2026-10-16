@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import type { ShopifyCart } from "@/lib/types";
 import { formatINR } from "@/lib/commerce";
 import { serializeCartWrite } from "@/components/cart-request";
+import { optimisticCartQuantity } from "@/components/cart-optimism";
+import { cartCountStore } from "@/components/cart-count";
 import { createCommerceItem, createShopifyAnalyticsProduct, emitCommerceEvent } from "@/lib/tracking-client";
 
 async function readResponse(response: Response) {
@@ -16,7 +17,6 @@ async function readResponse(response: Response) {
 }
 
 export function CartPanel({ initialCart, shippingConfigured }: { initialCart: ShopifyCart | null; shippingConfigured: boolean }) {
-  const router = useRouter();
   const [cart, setCart] = useState(initialCart);
   const [busyLine, setBusyLine] = useState<string | null>(null);
   const [message, setMessage] = useState("");
@@ -34,6 +34,10 @@ export function CartPanel({ initialCart, shippingConfigured }: { initialCart: Sh
   }, [initialCart]);
 
   async function changeQuantity(lineId: string, quantity: number) {
+    const previousQuantity = cart?.lines.find((line) => line.id === lineId)?.quantity;
+    if (previousQuantity === undefined || busyLine === lineId) return;
+    cartCountStore.beginChange(lineId, quantity - previousQuantity);
+    setCart((current) => current ? optimisticCartQuantity(current, lineId, quantity) : current);
     setBusyLine(lineId);
     setMessage("");
     try {
@@ -48,9 +52,14 @@ export function CartPanel({ initialCart, shippingConfigured }: { initialCart: Sh
         if (item) emitCommerceEvent({ name: added ? "add_to_cart" : "remove_from_cart", currency: previous.merchandise.price.currencyCode, value: Number(previous.merchandise.price.amount) * amount, items: [item] }, added ? { shopifyCartId: cart?.id, ...(shopifyProduct ? { shopifyProducts: [shopifyProduct] } : {}) } : {});
       }
       setCart(data.cart || null);
-      router.refresh();
+      cartCountStore.confirmChange(lineId, data.cart?.totalQuantity || 0);
       if (data.warnings?.length) setMessage(data.warnings.map((warning) => warning.message).join(" "));
-    } catch (error) { emitCommerceEvent({ name: "commerce_error", action: "cart_update" }); setMessage(error instanceof Error ? error.message : "Bag update failed."); }
+    } catch (error) {
+      setCart((current) => current ? optimisticCartQuantity(current, lineId, previousQuantity) : current);
+      cartCountStore.failChange(lineId);
+      emitCommerceEvent({ name: "commerce_error", action: "cart_update" });
+      setMessage(error instanceof Error ? error.message : "Bag update failed.");
+    }
     finally { setBusyLine(null); }
   }
 
@@ -66,7 +75,7 @@ export function CartPanel({ initialCart, shippingConfigured }: { initialCart: Sh
         if (item) emitCommerceEvent({ name: "remove_from_cart", currency: removed.merchandise.price.currencyCode, value: Number(removed.merchandise.price.amount) * (data.removedQuantity || removed.quantity), items: [item] });
       }
       setCart(data.cart || null);
-      router.refresh();
+      cartCountStore.setCount(data.cart?.totalQuantity || 0);
     } catch (error) { emitCommerceEvent({ name: "commerce_error", action: "cart_update" }); setMessage(error instanceof Error ? error.message : "Bag update failed."); }
     finally { setBusyLine(null); }
   }
@@ -97,11 +106,10 @@ export function CartPanel({ initialCart, shippingConfigured }: { initialCart: Sh
   if (!cart || cart.totalQuantity === 0) {
     return <div className="empty-cart artifact-cart-empty">
       <Image src="/assets/squad-runner-hq.png" alt="" width={120} height={120} />
-      <p className="eyebrow">Good things start small</p>
       <h2>Your bag is empty</h2>
       <p>Every great habit starts with a single seed.</p>
-      <Link href="/shop" className="button button-dark">Start shopping</Link>
-      <p className="form-message" aria-live="polite">{message}</p>
+      <Link href="/shop" className="button button-dark">START SHOPPING</Link>
+      <p className="form-message" aria-live="polite" hidden={!message}>{message}</p>
     </div>;
   }
 

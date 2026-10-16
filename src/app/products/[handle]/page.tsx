@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductDetail } from "@/components/ProductDetail";
-import { getProduct, getProducts, parseApprovedReviews, parseProductFaqs } from "@/lib/storefront";
+import { getCardProducts, getRequestCachedProduct, parseApprovedReviews, parseProductFaqs } from "@/lib/storefront";
 import type { BeejProduct } from "@/lib/types";
 import { requestBuyerIp } from "@/lib/request-ip";
 import { getPublicSiteUrl } from "@/lib/site-url";
@@ -10,7 +10,7 @@ import { escapeJsonLd, isValidGtin, numericShopifyId } from "@/lib/product-feeds
 type Params = { params: Promise<{ handle: string }>; searchParams: Promise<{ variant?: string | string[] }> };
 
 async function productFor(handle: string, buyerIp?: string): Promise<BeejProduct | null> {
-  try { return await getProduct(handle, buyerIp); } catch { return null; }
+  try { return await getRequestCachedProduct(handle, buyerIp); } catch { return null; }
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
@@ -29,16 +29,18 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 }
 
 export async function generateStaticParams() {
-  try { return (await getProducts()).map((product) => ({ handle: product.handle })); }
+  try { return (await getCardProducts()).map((product) => ({ handle: product.handle })); }
   catch { return []; }
 }
 
 export default async function ProductPage({ params, searchParams }: Params) {
   const [{ handle }, query] = await Promise.all([params, searchParams]);
   const buyerIp = await requestBuyerIp();
-  const product = await productFor(handle, buyerIp);
+  const [product, products] = await Promise.all([
+    productFor(handle, buyerIp),
+    getCardProducts(buyerIp).catch(() => []),
+  ]);
   if (!product) notFound();
-  const products = await getProducts(buyerIp).catch(() => []);
   const related = products.filter((item) => item.id !== product.id).slice(0, 4);
   const faqs = parseProductFaqs(product.metafields.faqs);
   const reviews = parseApprovedReviews(product.metafields.approvedReviews);

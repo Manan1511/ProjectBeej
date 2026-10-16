@@ -7,7 +7,7 @@ describe("hero background stripes", () => {
   it("starts the reference rotation without waiting for visibility JavaScript", () => {
     const rule = globalStyles.match(/\.hero-stripes\s*\{([^}]*)\}/)?.[1] ?? "";
 
-    expect(rule).toMatch(/animation:\s*hero-stripes-rotate\s+48s\s+linear\s+infinite/);
+    expect(rule).toMatch(/animation:\s*hero-stripes-rotate\s+150s\s+linear\s+infinite/);
     expect(rule).not.toMatch(/animation-play-state:\s*paused/);
   });
 

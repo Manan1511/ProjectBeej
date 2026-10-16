@@ -108,7 +108,9 @@ describe("commerce presentation preserves Shopify purchase safeguards", () => {
     const markup = renderToStaticMarkup(createElement(CartPanel, { initialCart: null, shippingConfigured: false }));
 
     expect(markup).toContain("artifact-cart-empty");
-    expect(markup).toContain("Your bag is empty");
+    expect(markup).toMatch(/<h2>Your bag is empty<\/h2>.*?<p>Every great habit starts with a single seed\.<\/p>.*?>START SHOPPING<\/a>/);
+    expect(markup).not.toContain("Good things start small");
+    expect(markup).not.toContain('class="eyebrow"');
     expect(markup).not.toMatch(/₹\s?299|₹\s?149|₹\s?499/);
   });
 

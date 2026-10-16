@@ -7,7 +7,7 @@ import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { PreviewNotice } from "@/components/PreviewNotice";
-import { getSiteSettings, getStorefrontMode } from "@/lib/storefront";
+import { getRequestCachedSiteSettings, getStorefrontMode } from "@/lib/storefront";
 import { requestBuyerIp } from "@/lib/request-ip";
 import { getPublicSiteUrl } from "@/lib/site-url";
 import { getPublicTrackingConfig } from "@/lib/tracking-config";
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#3A4229" };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const settings = await getSiteSettings(await requestBuyerIp());
+  const settings = await getRequestCachedSiteSettings(await requestBuyerIp());
   const preview = getStorefrontMode() === "preview";
   const trackingConfig = getPublicTrackingConfig(
     process.env,

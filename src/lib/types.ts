@@ -62,6 +62,11 @@ export type ShopifyCart = {
   lines: CartLine[];
 };
 
+export type ShopifyCartSnapshot = {
+  totalQuantity: number;
+  lines: Array<{ id: string; quantity: number; merchandise: { id: string } }>;
+};
+
 export type HomeCopy = Partial<Record<
   | "heroEyebrow"
   | "heroTitleLineOne"

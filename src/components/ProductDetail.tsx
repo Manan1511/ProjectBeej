@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { BeejProduct, ProductFaq, ProductReview } from "@/lib/types";
 import { formatINR } from "@/lib/commerce";
 import { ProductGrid } from "@/components/ProductGrid";
 import { getBrowserCartKey, serializeCartWrite } from "@/components/cart-request";
+import { cartCountStore } from "@/components/cart-count";
 import { createCommerceItem, createShopifyAnalyticsProduct, emitCommerceEvent } from "@/lib/tracking-client";
 
 const fallbackSkins: Record<string, { tint: string; mascot: string; player: string }> = {
@@ -19,14 +19,14 @@ const fallbackSkins: Record<string, { tint: string; mascot: string; player: stri
 };
 
 async function postAction(url: string, variantId: string, quantity: number) {
-  const response = await serializeCartWrite(() => fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ variantId, quantity, clientKey: getBrowserCartKey() }) }));
-  const data = await response.json() as { error?: string; checkoutUrl?: string; cartId?: string; acceptedQuantity?: number; warnings?: Array<{ message: string }> };
+  const queueKey = url === "/api/buy-now" ? "buy-now" : "bag";
+  const response = await serializeCartWrite(() => fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ variantId, quantity, clientKey: getBrowserCartKey() }) }), queueKey);
+  const data = await response.json() as { error?: string; checkoutUrl?: string; cartId?: string; cart?: { totalQuantity: number }; acceptedQuantity?: number; warnings?: Array<{ message: string }> };
   if (!response.ok) throw Object.assign(new Error(data.error || "That snack could not be added right now."), { status: response.status });
   return data;
 }
 
 export function ProductDetail({ product, faqs, reviews, related, initialVariantId }: { product: BeejProduct; faqs: ProductFaq[]; reviews: ProductReview[]; related: BeejProduct[]; initialVariantId?: string }) {
-  const router = useRouter();
   const skin = fallbackSkins[product.handle] || { tint: "#D6EBC8", mascot: "/assets/seed.png", player: "A Beej original" };
   const [activeImage, setActiveImage] = useState(0);
   const [variantId, setVariantId] = useState(initialVariantId || product.variants.find((variant) => variant.availableForSale)?.id || product.variants[0]?.id || "");
@@ -48,10 +48,13 @@ export function ProductDetail({ product, faqs, reviews, related, initialVariantI
 
   async function addToBag(buyNow: boolean) {
     if (!variant || !available) return;
+    const requestId = buyNow ? null : crypto.randomUUID();
     setBusy(true);
     setMessage("");
+    if (requestId) cartCountStore.beginAdd(requestId);
     try {
       const result = await postAction(buyNow ? "/api/buy-now" : "/api/cart/lines", variant.id, quantity);
+      if (requestId) cartCountStore.confirmAdd(requestId, result.cart?.totalQuantity ?? 0);
       const acceptedQuantity = result.acceptedQuantity || 0;
       const item = createCommerceItem({ variantId: variant.id, title: product.title, price: variant.price.amount, quantity: acceptedQuantity, brand: "Project Beej", category: product.productType, variant: variant.title });
       const shopifyProduct = createShopifyAnalyticsProduct({ productGid: product.id, variantGid: variant.id, name: product.title, variantName: variant.title, brand: "Project Beej", category: product.productType, price: variant.price.amount, quantity: acceptedQuantity });
@@ -62,9 +65,9 @@ export function ProductDetail({ product, faqs, reviews, related, initialVariantI
       }
       else {
         setMessage(result.warnings?.map((warning) => warning.message).join(" ") || "Added to your bag.");
-        router.refresh();
       }
     } catch (error) {
+      if (requestId) cartCountStore.failAdd(requestId);
       emitCommerceEvent({ name: "commerce_error", action: buyNow ? "buy_now" : "add_to_cart", ...(typeof (error as { status?: unknown })?.status === "number" ? { status_code: (error as { status: number }).status } : {}) });
       setMessage(error instanceof Error ? error.message : "That snack could not be added right now.");
     }

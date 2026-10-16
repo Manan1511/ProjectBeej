@@ -1,6 +1,7 @@
 import "server-only";
+import { cache } from "react";
 import { readCartCookie } from "@/lib/commerce";
-import type { BeejProduct, CartLine, ProductFaq, ProductReview, ShopifyCart, SiteSettings } from "@/lib/types";
+import type { BeejProduct, CartLine, ProductFaq, ProductReview, ShopifyCart, ShopifyCartSnapshot, SiteSettings } from "@/lib/types";
 import { parseAnnouncement, parseHomeCopy, parseStorefrontSlides } from "@/lib/storefront-settings";
 import type { ConsentPreferences } from "@/lib/tracking-types";
 
@@ -19,10 +20,18 @@ const PRODUCT_FIELDS = `
   featuredImage { url altText }
   images(first: 10) { nodes { url altText } }
   priceRange { minVariantPrice { amount currencyCode } }
-  variants(first: 50) { nodes { id title sku barcode compareAtPrice { amount currencyCode } availableForSale quantityAvailable price { amount currencyCode } selectedOptions { name value } } }
+  variants(first: 50) { nodes { id title sku barcode compareAtPrice { amount currencyCode } availableForSale price { amount currencyCode } selectedOptions { name value } } }
   collections(first: 10) { nodes { handle } }
   beejFaqs: metafield(namespace: "beej", key: "faqs") { value }
   beejApprovedReviews: metafield(namespace: "beej", key: "approved_reviews") { value }
+`;
+
+const PRODUCT_CARD_FIELDS = `
+  id handle title description productType vendor availableForSale
+  featuredImage { url altText }
+  images(first: 2) { nodes { url altText } }
+  priceRange { minVariantPrice { amount currencyCode } }
+  variants(first: 50) { nodes { id title availableForSale price { amount currencyCode } selectedOptions { name value } } }
 `;
 
 type GraphqlResponse<T> = { data?: T; errors?: Array<{ message: string }> };
@@ -64,7 +73,7 @@ export async function storefrontQuery<T>(
   const token = storefrontToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    [token.isPrivate ? "Shopify-Storefront-Private-Token" : "Shopify-Storefront-Access-Token"]: token.value,
+    [token.isPrivate ? "Shopify-Storefront-Private-Token" : "X-Shopify-Storefront-Access-Token"]: token.value,
   };
   if (token.isPrivate) {
     const safeIp = normalizeBuyerIp(buyerIp);
@@ -97,10 +106,10 @@ type ShopifyProductRaw = {
   updatedAt?: string;
   availableForSale: boolean;
   featuredImage?: { url: string; altText?: string | null } | null;
-  images: { nodes: Array<{ url: string; altText?: string | null }> };
+  images?: { nodes: Array<{ url: string; altText?: string | null }> };
   priceRange: { minVariantPrice: { amount: string; currencyCode: string } };
   variants: { nodes: Array<{ id: string; title: string; sku?: string | null; barcode?: string | null; compareAtPrice?: { amount: string; currencyCode: string } | null; availableForSale: boolean; quantityAvailable?: number | null; price: { amount: string; currencyCode: string }; selectedOptions: Array<{ name: string; value: string }> }> };
-  collections: { nodes: Array<{ handle: string }> };
+  collections?: { nodes: Array<{ handle: string }> };
   beejFaqs?: { value: string } | null;
   beejApprovedReviews?: { value: string } | null;
 };
@@ -135,7 +144,7 @@ export function parseApprovedReviews(value: string | undefined): ProductReview[]
 }
 
 function mapProduct(raw: ShopifyProductRaw): BeejProduct {
-  const images = raw.images.nodes.map((image) => ({ url: image.url, alt: image.altText || raw.title }));
+  const images = (raw.images?.nodes || []).map((image) => ({ url: image.url, alt: image.altText || raw.title }));
   if (images.length === 0 && raw.featuredImage) images.push({ url: raw.featuredImage.url, alt: raw.featuredImage.altText || raw.title });
   return {
     id: raw.id,
@@ -148,10 +157,10 @@ function mapProduct(raw: ShopifyProductRaw): BeejProduct {
     updatedAt: raw.updatedAt,
     productType: raw.productType || "Roasted Makhana",
     images,
-    variants: raw.variants.nodes,
+    variants: raw.variants.nodes.map((variant) => ({ ...variant, selectedOptions: variant.selectedOptions || [] })),
     price: raw.priceRange.minVariantPrice,
     availableForSale: raw.availableForSale,
-    collectionHandles: raw.collections.nodes.map((collection) => collection.handle),
+    collectionHandles: raw.collections?.nodes.map((collection) => collection.handle) || [],
     metafields: { faqs: raw.beejFaqs?.value || "", approvedReviews: raw.beejApprovedReviews?.value || "" },
     preview: getStorefrontMode() === "preview",
   };
@@ -192,9 +201,28 @@ export async function getProducts(buyerIp?: string | null): Promise<BeejProduct[
   return products;
 }
 
+export async function getCardProducts(buyerIp?: string | null): Promise<BeejProduct[]> {
+  const products = await queryProducts(`query BeejProductCards { products(first: 20, sortKey: TITLE) { nodes { ${PRODUCT_CARD_FIELDS} } } }`, {}, buyerIp);
+  if (!products.length && getStorefrontMode() === "preview") return previewProducts;
+  return products;
+}
+
+/** Shares public, request-local reads across layouts, pages and metadata generation. */
 export async function getCollectionProducts(handle: string, buyerIp?: string | null): Promise<BeejProduct[]> {
   const products = await queryProducts(
     `query BeejCollection($handle: String!) { collection(handle: $handle) { products(first: 20) { nodes { ${PRODUCT_FIELDS} } } } }`,
+    { handle },
+    buyerIp,
+  );
+  if (!products.length && getStorefrontMode() === "preview") {
+    return previewProducts.filter((product) => product.collectionHandles.includes(handle));
+  }
+  return products;
+}
+
+export async function getCardCollectionProducts(handle: string, buyerIp?: string | null): Promise<BeejProduct[]> {
+  const products = await queryProducts(
+    `query BeejCollectionCards($handle: String!) { collection(handle: $handle) { products(first: 20) { nodes { ${PRODUCT_CARD_FIELDS} } } } }`,
     { handle },
     buyerIp,
   );
@@ -217,6 +245,8 @@ export async function getProduct(handle: string, buyerIp?: string | null): Promi
     throw error;
   }
 }
+
+export const getRequestCachedProduct = cache((handle: string, buyerIp?: string | null) => getProduct(handle, buyerIp));
 
 export async function getSiteSettings(buyerIp?: string | null): Promise<SiteSettings> {
   try {
@@ -244,6 +274,8 @@ export async function getSiteSettings(buyerIp?: string | null): Promise<SiteSett
     return {};
   }
 }
+
+export const getRequestCachedSiteSettings = cache((buyerIp?: string | null) => getSiteSettings(buyerIp));
 
 export type ShopifyPage = { title: string; body: string; bodySummary: string; seo?: { title?: string | null; description?: string | null } | null };
 
@@ -274,7 +306,8 @@ export async function getShopifyPolicy(key: "privacyPolicy" | "refundPolicy" | "
   }
 }
 
-const CART_FIELDS = `id checkoutUrl totalQuantity cost { subtotalAmount { amount currencyCode } totalAmount { amount currencyCode } } lines(first: 20) { nodes { id quantity merchandise { ... on ProductVariant { id title availableForSale quantityAvailable price { amount currencyCode } selectedOptions { name value } product { id title handle productType featuredImage { url altText } } } } } }`;
+const CART_FIELDS = `id checkoutUrl totalQuantity cost { subtotalAmount { amount currencyCode } totalAmount { amount currencyCode } } lines(first: 20) { nodes { id quantity merchandise { ... on ProductVariant { id title availableForSale price { amount currencyCode } selectedOptions { name value } product { id title handle productType featuredImage { url altText } } } } } }`;
+const CART_SNAPSHOT_FIELDS = `totalQuantity lines(first: 20) { nodes { id quantity merchandise { ... on ProductVariant { id } } } }`;
 
 type ShopifyCartConnection = Omit<ShopifyCart, "lines"> & { lines: { nodes: CartLine[] } };
 type ShopifyCartMutation = {
@@ -300,6 +333,29 @@ export async function getShopifyCart(cartId: string, buyerIp?: string | null): P
     buyerIp,
   );
   return normalizeShopifyCart(data.cart);
+}
+
+/** Lightweight preflight for cart writes; it avoids downloading prices and product images. */
+export async function getShopifyCartSnapshot(cartId: string, buyerIp?: string | null): Promise<ShopifyCartSnapshot | null> {
+  const safeId = readCartCookie(cartId);
+  if (!safeId) return null;
+  const data = await storefrontQuery<{ cart: (Omit<ShopifyCartSnapshot, "lines"> & { lines: { nodes: ShopifyCartSnapshot["lines"] } }) | null }>(
+    `query BeejCartSnapshot($id: ID!) { cart(id: $id) { ${CART_SNAPSHOT_FIELDS} } }`,
+    { id: safeId },
+    buyerIp,
+  );
+  return data.cart ? { totalQuantity: data.cart.totalQuantity, lines: data.cart.lines.nodes } : null;
+}
+
+export async function getShopifyCartCount(cartId: string, buyerIp?: string | null): Promise<number> {
+  const safeId = readCartCookie(cartId);
+  if (!safeId) return 0;
+  const data = await storefrontQuery<{ cart: { totalQuantity: number } | null }>(
+    `query BeejCartCount($id: ID!) { cart(id: $id) { totalQuantity } }`,
+    { id: safeId },
+    buyerIp,
+  );
+  return data.cart?.totalQuantity || 0;
 }
 
 export async function createShopifyCart(lines: Array<{ merchandiseId: string; quantity: number }>, buyerIp?: string | null) {

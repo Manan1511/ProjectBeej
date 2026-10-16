@@ -7,8 +7,12 @@ import {
   createShopifyCart,
   getStorefrontMode,
   getProducts,
+  getCardCollectionProducts,
+  getCardProducts,
   getFreshShopifyCheckoutUrl,
   getShopifyCart,
+  getShopifyCartCount,
+  getShopifyCartSnapshot,
   removeShopifyCartLines,
   updateShopifyCartLines,
 } from "./storefront";
@@ -86,11 +90,88 @@ describe("Shopify cart response mapping", () => {
     expect(getStorefrontMode()).toBe("live");
   });
 
+  it("sends the public Storefront token with Shopify's required header and marks catalog products live", async () => {
+    vi.stubEnv("SHOPIFY_MODE", "live");
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: { products: { nodes: [publishedShopifyProduct] } } }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const [product] = await getProducts();
+    const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
+
+    expect(new Headers(request.headers).get("x-shopify-storefront-access-token")).toBe("test-storefront-token");
+    expect(new Headers(request.headers).get("shopify-storefront-access-token")).toBeNull();
+    expect(product).toMatchObject({ handle: "pudina", preview: false, availableForSale: true });
+  });
+
+  it("does not request inventory counts from Shopify product or cart queries", async () => {
+    vi.stubEnv("SHOPIFY_MODE", "live");
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body)) as { query: string };
+      expect(body.query).not.toContain("quantityAvailable");
+      return new Response(JSON.stringify({ data: body.query.includes("BeejCart") ? { cart: shopifyCart } : { products: { nodes: [publishedShopifyProduct] } } }), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await getProducts();
+    await getShopifyCart(shopifyCart.id);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it("returns cart lines as an array from Shopify's lines connection", async () => {
     respondWith({ cart: shopifyCart });
     const cart = await getShopifyCart(shopifyCart.id);
 
     expect(cart?.lines).toEqual([cartLine]);
+  });
+
+  it("uses a lean cart snapshot for quantity validation", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: {
+      cart: { totalQuantity: 2, lines: { nodes: [{ id: "line-1", quantity: 2, merchandise: { id: cartLine.merchandise.id } }] } },
+    } }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const snapshot = await getShopifyCartSnapshot(shopifyCart.id);
+    const request = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)) as { query: string };
+
+    expect(snapshot).toEqual({ totalQuantity: 2, lines: [{ id: "line-1", quantity: 2, merchandise: { id: cartLine.merchandise.id } }] });
+    expect(request.query).toContain("totalQuantity");
+    expect(request.query).not.toContain("featuredImage");
+    expect(request.query).not.toContain("subtotalAmount");
+  });
+
+  it("loads just the fields used by product cards", async () => {
+    respondWith({ products: { nodes: [publishedShopifyProduct] } });
+
+    const [product] = await getCardProducts();
+    const request = JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body)) as { query: string };
+
+    expect(product).toMatchObject({ handle: "pudina", images: [{ url: "https://cdn.shopify.com/pudina.jpg" }] });
+    expect(request.query).toContain("images(first: 2)");
+    expect(request.query).not.toContain("descriptionHtml");
+    expect(request.query).not.toContain("beejFaqs");
+    expect(request.query).not.toContain("collections(first:");
+  });
+
+  it("uses the card field selection for collection product grids", async () => {
+    respondWith({ collection: { products: { nodes: [publishedShopifyProduct] } } });
+
+    const [product] = await getCardCollectionProducts("roasted-makhana");
+    const request = JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body)) as { query: string; variables: Record<string, unknown> };
+
+    expect(product?.handle).toBe("pudina");
+    expect(request.query).toContain("images(first: 2)");
+    expect(request.query).not.toContain("beejApprovedReviews");
+    expect(request.variables.handle).toBe("roasted-makhana");
+  });
+
+  it("loads only the cart quantity for the site header", async () => {
+    respondWith({ cart: { totalQuantity: 7 } });
+
+    await expect(getShopifyCartCount(shopifyCart.id)).resolves.toBe(7);
+    const request = JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body)) as { query: string };
+    expect(request.query).toContain("totalQuantity");
+    expect(request.query).not.toContain("lines(");
   });
 
   it("returns cart lines as an array after creating a cart", async () => {

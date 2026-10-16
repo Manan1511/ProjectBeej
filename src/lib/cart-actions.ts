@@ -1,5 +1,5 @@
 import { totalCartQuantity } from "@/lib/commerce";
-import type { ShopifyCart } from "@/lib/types";
+import type { ShopifyCart, ShopifyCartSnapshot } from "@/lib/types";
 
 export type CartLineInput = { merchandiseId: string; quantity: number };
 export type CartMutationResult = {
@@ -9,7 +9,7 @@ export type CartMutationResult = {
 };
 
 export type CartMutationClient = {
-  getCart(cartId: string): Promise<ShopifyCart | null>;
+  getCart(cartId: string): Promise<ShopifyCartSnapshot | null>;
   createCart(lines: CartLineInput[]): Promise<CartMutationResult>;
   addLines(cartId: string, lines: CartLineInput[]): Promise<CartMutationResult>;
 };
@@ -21,7 +21,7 @@ export class CartActionError extends Error {
   }
 }
 
-function variantQuantity(cart: ShopifyCart, variantId: string): number {
+function variantQuantity(cart: ShopifyCart | ShopifyCartSnapshot, variantId: string): number {
   return cart.lines.reduce((sum, line) => sum + (line.merchandise.id === variantId ? line.quantity : 0), 0);
 }
 

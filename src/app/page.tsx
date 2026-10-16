@@ -5,14 +5,15 @@ import { BannerSlider } from "@/components/BannerSlider";
 import { HeroStripes } from "@/components/HeroStripes";
 import { NewsletterForm } from "@/components/NewsletterForm";
 import { ProductGrid } from "@/components/ProductGrid";
-import { getProducts, getSiteSettings } from "@/lib/storefront";
+import { SproutVideo } from "@/components/SproutVideo";
+import { getCardProducts, getRequestCachedSiteSettings } from "@/lib/storefront";
 import type { BeejProduct } from "@/lib/types";
 import { requestBuyerIp } from "@/lib/request-ip";
 import { getPublicSiteUrl } from "@/lib/site-url";
 import { escapeJsonLd } from "@/lib/product-feeds";
 
 export const metadata: Metadata = {
-  title: "Good things grow from small seeds.",
+  title: { absolute: "Home | Project Beej" },
   description: "Meet Project Beej, explore the current snack range, and find a new favourite.",
   ...(getPublicSiteUrl() ? { alternates: { canonical: "/" } } : {}),
 };
@@ -24,6 +25,8 @@ const squad = [
   { image: "squad-pickleball-hq.png", name: "The Smasher", flavour: "Pudina", tagline: "For a fresh rally between meetings.", handle: "pudina", tone: "pudina" },
 ];
 
+const benefitPhrases = ["Small seeds", "Big crunch", "Flavour for the moment", "Beej in the mix"];
+
 const gallery = [
   { src: "/assets/pudina-hands.jpg", alt: "A hand reaches for a Project Beej snack" },
   { src: "/assets/himalayan-yoga.jpg", alt: "Project Beej Himalayan Salt & Pepper pack in a lifestyle scene" },
@@ -32,24 +35,19 @@ const gallery = [
 ];
 
 const values = [
-  { number: "01", title: "Nature first", body: "Nature gives us the seed. We add the flavour." },
-  { number: "02", title: "Big on flavour", body: "Bold flavour comes first. Every seasoning earns its place." },
-  { number: "03", title: "Grown with purpose", body: "Small, mindful choices help shape a brand with purpose." },
-];
-
-const collectionCards = [
-  { handle: "roasted-makhana", title: "Roasted Makhana", description: "4 bold flavours", image: "/assets/pudina-pop.jpg" },
-  { handle: "ready-to-roast", title: "Ready to Roast", description: "Plain makhana, your way", image: "/assets/makhana-pond.jpg" },
+  { number: "01", title: "Nature first", body: "Built on humble, honest ingredients. Nothing you need to look up." },
+  { number: "02", title: "Big on flavour", body: "Healthy shouldn't mean boring. Every snack has to earn its seasoning." },
+  { number: "03", title: "Grown with purpose", body: "Small, mindful choices that add up to healthier everyday habits." },
 ];
 
 async function homeData(): Promise<{
   featuredProducts: BeejProduct[];
-  settings: Awaited<ReturnType<typeof getSiteSettings>>;
+  settings: Awaited<ReturnType<typeof getRequestCachedSiteSettings>>;
 }> {
   const buyerIp = await requestBuyerIp();
   const [settings, productResult] = await Promise.all([
-    getSiteSettings(buyerIp),
-    getProducts(buyerIp).catch(() => []),
+    getRequestCachedSiteSettings(buyerIp),
+    getCardProducts(buyerIp).catch(() => []),
   ]);
   const featuredHandles = settings.featuredHandles;
   const products = featuredHandles?.length
@@ -80,24 +78,28 @@ export default async function HomePage() {
         <HeroStripes />
         <div className="hero-inner artifact-home-inner">
           <div className="hero-copy artifact-home-copy">
-            <span className="hero-eyebrow"><i aria-hidden="true" /> {settings.homeCopy?.heroEyebrow || "A little crunch. A lot of character."}</span>
-            <h1 id="home-title">{settings.homeCopy?.heroTitleLineOne || "Good things"}<br /><span>{settings.homeCopy?.heroTitleLineTwo || "grow from small seeds."}</span></h1>
-            <p>{settings.homeCopy?.heroDescription || "Meet the Beej snack line-up, find a flavour, and make snack time your own."}</p>
+            <span className="hero-eyebrow">LIGHT · CRUNCHY · HEALTHY</span>
+            <h1 id="home-title">Good things grow<br /><span>from small seeds.</span></h1>
+            <p>Wholesome snacks made from nature&apos;s humblest ingredients, seasoned like they mean it.</p>
             <div className="hero-actions">
-              <Link className="button button-sage" href="/shop">{settings.homeCopy?.heroShopLabel || "Shop now"}</Link>
-              <Link className="button button-hero-outline" href="/about">{settings.homeCopy?.heroStoryLabel || "Our story"}</Link>
+              <Link className="button button-sage" href="/shop">Shop now</Link>
+              <Link className="button button-hero-outline" href="/about">Our story</Link>
             </div>
           </div>
-          <BannerSlider settings={settings} />
+          <BannerSlider products={featuredProducts} />
         </div>
       </section>
 
       <div className="benefit-ribbon artifact-benefits" role="region" aria-label="A little Beej for your snack break. Focus here or hover to pause the scrolling text." tabIndex={0}>
         <span className="sr-only">Small seeds, big crunch, flavour for the moment, Beej in the mix.</span>
         <div className="benefit-ribbon-track artifact-benefit-track" aria-hidden="true">
-          {[0, 1].map((copy) => (
+          {Array.from({ length: 6 }, (_, copy) => (
             <div className="benefit-ribbon-group" key={copy}>
-              <span>Small seeds</span><i /><span>Big crunch</span><i /><span>Flavour for the moment</span><i /><span>Beej in the mix</span><i />
+              {benefitPhrases.map((phrase) => (
+                <span className="artifact-benefit-item" key={phrase}>
+                  <span>{phrase}</span><i />
+                </span>
+              ))}
             </div>
           ))}
         </div>
@@ -105,8 +107,8 @@ export default async function HomePage() {
 
       <section className="squad-section artifact-team" id="team" aria-labelledby="team-title">
         <div className="section-heading">
-          <div><span className="eyebrow">Meet the Beej squad</span><h2 id="team-title">Snacking is a sport.</h2></div>
-          <Link className="text-link" href="/shop">Pick your player <span aria-hidden="true">↗</span></Link>
+          <div><span className="eyebrow">Meet the team</span><h2 id="team-title">Snacking is a sport.</h2></div>
+          <p className="artifact-team-intro">Every Beej flavour comes with its own athlete on the jar. Which one&apos;s on your team?</p>
         </div>
         <div className="squad-grid">
           {squad.map((member) => (
@@ -127,43 +129,19 @@ export default async function HomePage() {
 
       <section className="home-shop artifact-featured" id="shop" aria-labelledby="featured-title">
         <div className="section-heading">
-          <div><span className="eyebrow">A flavour for every kind of break</span><h2 id="featured-title">Find your <em>favourite.</em></h2></div>
-          <Link className="text-link" href="/shop">Shop all snacks <span aria-hidden="true">↗</span></Link>
+          <div><h2 id="featured-title">Fall favourites</h2></div>
+          <Link className="text-link" href="/shop">Shop all snacks</Link>
         </div>
         <ProductGrid products={featuredProducts} listName="Home featured" />
-      </section>
-
-      <section className="category-shortcuts artifact-categories" aria-label="Explore the Beej range">
-        <div className="category-shortcut-grid">
-          {collectionCards.map((collection) => (
-            <Link className="category-shortcut" href={`/collections/${collection.handle}`} key={collection.handle}>
-              <Image className="category-shortcut-photo" src={collection.image} alt="" fill sizes="(max-width: 760px) 92vw, 33vw" />
-              <span className="category-shortcut-shade" aria-hidden="true" />
-              <span className="category-shortcut-copy">
-                <span className="category-shortcut-title">{collection.title}</span>
-                <span className="category-shortcut-description">{collection.description}<span aria-hidden="true">→</span></span>
-              </span>
-            </Link>
-          ))}
-          <article className="category-shortcut category-shortcut-coming-soon">
-            <span className="category-shortcut-seed"><Image src="/assets/seed.png" alt="" width={68} height={68} /></span>
-            <div className="category-shortcut-coming-copy">
-              <h2>More sprouting soon</h2>
-              <p>New snacks are growing in the Beej kitchen.</p>
-            </div>
-          </article>
-        </div>
       </section>
 
       <section className="story-band artifact-story" id="story" aria-labelledby="story-title">
         <div className="story-copy">
           <h2 id="story-title">Rooted in nature. <span>Growing with purpose.</span></h2>
-          <p>Project Beej was born from a simple belief: the smallest choices shape the biggest transformations. We celebrate mindful snacking with simple ingredients, bold flavour, and a little character.</p>
+          <p>Project Beej was born from a simple belief: the smallest choices shape the biggest transformations. We celebrate nature&apos;s humblest ingredients to inspire healthier habits and mindful snacking.</p>
           <Link className="button button-outline" href="/about">Read our story</Link>
         </div>
-        <div className="story-image artifact-story-image">
-          <Image className="artifact-story-seedling" src="/assets/seedlings.jpg" alt="Young seedlings emerging from soil in warm light" width={1024} height={683} sizes="(max-width: 760px) calc(100vw - 36px), (max-width: 980px) 40vw, 36vw" />
-        </div>
+        <SproutVideo />
       </section>
 
       <section className="pillars-section artifact-values" aria-labelledby="values-title">

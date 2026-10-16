@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { BeejProduct, ShopifyCart } from "@/lib/types";
 
 vi.mock("@/lib/storefront", () => ({
-  getProduct: vi.fn(),
-  getProducts: vi.fn(),
+  getRequestCachedProduct: vi.fn(),
+  getCardProducts: vi.fn(),
   getShopifyCart: vi.fn(),
   parseApprovedReviews: vi.fn(() => []),
   parseProductFaqs: vi.fn(() => []),
@@ -17,7 +17,7 @@ import ProductPage from "./products/[handle]/page";
 import CartPage from "./cart/page";
 import { ProductDetail } from "@/components/ProductDetail";
 import { CartPanel } from "@/components/CartPanel";
-import { getProduct, getProducts, getShopifyCart } from "@/lib/storefront";
+import { getRequestCachedProduct, getCardProducts, getShopifyCart } from "@/lib/storefront";
 
 const product: BeejProduct = {
   id: "gid://shopify/Product/121",
@@ -90,10 +90,17 @@ function classesOf(node: ReactNode): string[] {
   return [element.props.className ?? "", ...classesOf(element.props.children)];
 }
 
+function textOf(node: ReactNode): string {
+  if (Array.isArray(node)) return node.map(textOf).join("");
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (!isValidElement(node)) return "";
+  return textOf((node as ReactElement<{ children?: ReactNode }>).props.children);
+}
+
 describe("Product and Cart routes keep Shopify as their data source", () => {
   beforeEach(() => {
-    vi.mocked(getProduct).mockResolvedValue(product);
-    vi.mocked(getProducts).mockResolvedValue([]);
+    vi.mocked(getRequestCachedProduct).mockResolvedValue(product);
+    vi.mocked(getCardProducts).mockResolvedValue([]);
     vi.mocked(getShopifyCart).mockResolvedValue(cart);
   });
 
@@ -119,5 +126,15 @@ describe("Product and Cart routes keep Shopify as their data source", () => {
     expect(panel?.props.initialCart?.cost.subtotalAmount.amount).toBe("834.00");
     expect(JSON.stringify(panel?.props.initialCart)).not.toMatch(/299|149|499/);
     expect(classesOf(page).some((value) => value.split(/\s+/).includes("artifact-cart-page"))).toBe(true);
+  });
+
+  it("uses the reference bag heading and three checkout steps", async () => {
+    const page = await CartPage();
+    const text = textOf(page);
+    const title = textOf(findElements(page, "h1")[0]);
+
+    expect(title).toBe("Your bag");
+    expect(text).not.toContain("One good choice at a time");
+    expect(text).toContain("1 · BAG2 · DETAILS3 · DONE");
   });
 });

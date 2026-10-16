@@ -3,7 +3,7 @@ import { z } from "zod";
 import { normalizeQuantity, toPublicShopifyCart, totalCartQuantity } from "@/lib/commerce";
 import { clearStoredCartId, readStoredCartId, storeCartId } from "@/lib/cart-cookie";
 import { requestBuyerIp } from "@/lib/request-ip";
-import { addShopifyCartLines, createShopifyCart, getShopifyCart, getStorefrontMode, removeShopifyCartLines, updateShopifyCartLines } from "@/lib/storefront";
+import { addShopifyCartLines, createShopifyCart, getShopifyCartSnapshot, getStorefrontMode, removeShopifyCartLines, updateShopifyCartLines } from "@/lib/storefront";
 import { withKeyedLock } from "@/lib/lock";
 import { appendCartLine, CartActionError } from "@/lib/cart-actions";
 
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       const cartId = await readStoredCartId();
       const buyerIp = await requestBuyerIp();
       const client = {
-        getCart: (id: string) => getShopifyCart(id, buyerIp),
+        getCart: (id: string) => getShopifyCartSnapshot(id, buyerIp),
         createCart: async (lines: Array<{ merchandiseId: string; quantity: number }>) => (await createShopifyCart(lines, buyerIp)).cartCreate,
         addLines: async (id: string, lines: Array<{ merchandiseId: string; quantity: number }>) => (await addShopifyCartLines(id, lines, buyerIp)).cartLinesAdd,
       };
@@ -57,7 +57,7 @@ export async function PATCH(request: NextRequest) {
 
     return await withKeyedLock(cartId, async () => {
       const buyerIp = await requestBuyerIp();
-      const cart = await getShopifyCart(cartId, buyerIp);
+      const cart = await getShopifyCartSnapshot(cartId, buyerIp);
       if (!cart) {
         await clearStoredCartId();
         return errorResponse(new Error("Your bag has expired. Start a new bag to continue."), 410);
@@ -87,7 +87,7 @@ export async function DELETE(request: NextRequest) {
   try {
     return await withKeyedLock(cartId, async () => {
       const buyerIp = await requestBuyerIp();
-      const cart = await getShopifyCart(cartId, buyerIp);
+      const cart = await getShopifyCartSnapshot(cartId, buyerIp);
       if (!cart) {
         await clearStoredCartId();
         return errorResponse(new Error("Your bag has expired. Start a new bag to continue."), 410);
