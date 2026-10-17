@@ -7,7 +7,7 @@ vi.mock("@/lib/request-ip", () => ({ requestBuyerIp: vi.fn(async () => null) }))
 vi.mock("@/lib/site-url", () => ({ getPublicSiteUrl: () => null }));
 
 import HomePage from "./page";
-import ShopPage from "./shop/page";
+import { ShopCatalog } from "@/components/ShopCatalog";
 import { BannerSlider } from "@/components/BannerSlider";
 import { ProductGrid } from "@/components/ProductGrid";
 import { getCardProducts, getRequestCachedSiteSettings } from "@/lib/storefront";
@@ -61,15 +61,15 @@ function findBannerSlider(node: ReactNode): ReactElement<{ products: BeejProduct
   return findBannerSlider(element.props.children);
 }
 
-function collectTeamLinks(node: ReactNode): Array<{ href: string | undefined; className: string }> {
-  if (Array.isArray(node)) return node.flatMap(collectTeamLinks);
+function collectTeamCards(node: ReactNode): Array<{ href: string | undefined; className: string }> {
+  if (Array.isArray(node)) return node.flatMap(collectTeamCards);
   if (!isValidElement(node)) return [];
 
   const element = node as ReactElement<{ href?: string; className?: string; children?: ReactNode }>;
-  const teamLink = element.props.className?.split(/\s+/).includes("squad-card-link")
+  const teamCard = element.props.className?.split(/\s+/).includes("squad-card")
     ? [{ href: element.props.href, className: element.props.className ?? "" }]
     : [];
-  return [...teamLink, ...collectTeamLinks(element.props.children)];
+  return [...teamCard, ...collectTeamCards(element.props.children)];
 }
 
 function collectText(node: ReactNode): string[] {
@@ -108,18 +108,19 @@ describe("homepage featured product ordering", () => {
     const page = await HomePage();
     const root = page as ReactElement<{ children?: ReactNode }>;
     const text = collectText(root.props.children).join(" ").replace(/\s+/g, " ");
-    const links = collectTeamLinks(root.props.children);
+    const cards = collectTeamCards(root.props.children);
 
     expect(text).toContain("For when you need a kick.");
     expect(text).toContain("For cruising through the afternoon.");
     expect(text).toContain("For the classic play, every time.");
     expect(text).toContain("For a fresh rally between meetings.");
-    expect(links.map(({ href }) => href)).toEqual([
+    expect(cards.map(({ href }) => href)).toEqual([
       "/products/peri-peri",
       "/products/cheese",
       "/products/himalayan-salt-pepper",
       "/products/pudina",
     ]);
+    expect(cards.every(({ className }) => className === "squad-card")).toBe(true);
   });
 
   it("shows four featured products and excludes Classic Makhana from the homepage", async () => {
@@ -147,7 +148,7 @@ describe("homepage featured product ordering", () => {
   });
 
   it("keeps the full catalog, including Classic Makhana, on the shop page", async () => {
-    const page = await ShopPage({ searchParams: Promise.resolve({}) });
+    const page = await ShopCatalog({ searchParams: Promise.resolve({}) });
     const grid = findProductGrid(page);
     const handles = grid?.props.products.map(({ handle }) => handle);
 

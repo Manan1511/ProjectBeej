@@ -1,9 +1,16 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { shouldPlaySproutVideo } from "@/components/SproutVideo";
 
 const styles = readFileSync(new URL("./globals.css", import.meta.url), "utf8");
 
 describe("storefront motion", () => {
+  it("pauses the sprout video outside the viewport or when the tab is hidden", () => {
+    expect(shouldPlaySproutVideo(true, true)).toBe(true);
+    expect(shouldPlaySproutVideo(false, true)).toBe(false);
+    expect(shouldPlaySproutVideo(true, false)).toBe(false);
+  });
+
   it("uses a defined branded easing curve and visibly rotates the hero background", () => {
     expect(styles).toMatch(/--ease-beej:\s*cubic-bezier\(/);
     expect(styles).toMatch(/\.hero-stripes\s*\{[^}]*animation:\s*hero-stripes-rotate 150s linear infinite/);

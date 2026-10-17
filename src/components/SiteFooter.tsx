@@ -1,9 +1,13 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import type { SiteSettings } from "@/lib/types";
 import { ConsentSettingsButton, TrackedOutboundLink } from "@/components/TrackedOutboundLink";
+import { useStorefrontSettings } from "@/components/StorefrontSettingsProvider";
 
-export function SiteFooter({ settings }: { settings: SiteSettings }) {
+export function SiteFooter({ settings: fallback = {} }: { settings?: SiteSettings } = {}) {
+  const { settings } = useStorefrontSettings(fallback);
   const email = settings.contactEmail || "hello@projectbeej.com";
   return (
     <footer className="site-footer artifact-footer">

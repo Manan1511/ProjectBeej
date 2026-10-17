@@ -393,6 +393,13 @@ export function emitCommerceEvent(event: CommerceEvent, options: EmitOptions = {
   sendShopifyAnalytics(event, options, active);
 }
 
+/** Sends the Shopify page-view partner event when the public shop identity arrives after hydration. */
+export function emitShopifyPageView(): void {
+  const active = runtime;
+  if (!active?.config.enabled) return;
+  sendShopifyAnalytics({ name: "page_view", page_location: window.location.href, page_title: document.title }, {}, active);
+}
+
 export function emitSearch(searchTerm: string, resultCount?: number): void {
   const safeTerm = sanitizeSearchTerm(searchTerm);
   if (!safeTerm) return;

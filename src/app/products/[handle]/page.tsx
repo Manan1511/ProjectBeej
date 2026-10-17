@@ -1,21 +1,17 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { ProductDetail } from "@/components/ProductDetail";
+import { RelatedProducts, RelatedProductsFallback } from "@/components/RelatedProducts";
 import { getCardProducts, getRequestCachedProduct, parseApprovedReviews, parseProductFaqs } from "@/lib/storefront";
-import type { BeejProduct } from "@/lib/types";
-import { requestBuyerIp } from "@/lib/request-ip";
 import { getPublicSiteUrl } from "@/lib/site-url";
 import { escapeJsonLd, isValidGtin, numericShopifyId } from "@/lib/product-feeds";
 
-type Params = { params: Promise<{ handle: string }>; searchParams: Promise<{ variant?: string | string[] }> };
-
-async function productFor(handle: string, buyerIp?: string): Promise<BeejProduct | null> {
-  try { return await getRequestCachedProduct(handle, buyerIp); } catch { return null; }
-}
+type Params = { params: Promise<{ handle: string }> };
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { handle } = await params;
-  const product = await productFor(handle, await requestBuyerIp());
+  const product = await getRequestCachedProduct(handle);
   if (!product) return { title: "Snack" };
   const title = product.seo?.title?.trim() || product.title;
   const description = product.seo?.description?.trim() || product.description;
@@ -33,15 +29,10 @@ export async function generateStaticParams() {
   catch { return []; }
 }
 
-export default async function ProductPage({ params, searchParams }: Params) {
-  const [{ handle }, query] = await Promise.all([params, searchParams]);
-  const buyerIp = await requestBuyerIp();
-  const [product, products] = await Promise.all([
-    productFor(handle, buyerIp),
-    getCardProducts(buyerIp).catch(() => []),
-  ]);
+export default async function ProductPage({ params }: Params) {
+  const { handle } = await params;
+  const product = await getRequestCachedProduct(handle);
   if (!product) notFound();
-  const related = products.filter((item) => item.id !== product.id).slice(0, 4);
   const faqs = parseProductFaqs(product.metafields.faqs);
   const reviews = parseApprovedReviews(product.metafields.approvedReviews);
   const siteUrl = getPublicSiteUrl();
@@ -74,8 +65,8 @@ export default async function ProductPage({ params, searchParams }: Params) {
     { "@type": "ListItem", position: 3, name: product.productType, item: `${siteUrl}/collections/${product.productType === "Ready to Roast" ? "ready-to-roast" : "roasted-makhana"}` },
     { "@type": "ListItem", position: 4, name: product.title, item: `${siteUrl}/products/${product.handle}` },
   ] } : null;
-  const rawVariant = Array.isArray(query.variant) ? query.variant[0] : query.variant;
-  const selectedVariantId = rawVariant && /^\d{1,20}$/.test(rawVariant) ? product.variants.find((variant) => numericShopifyId(variant.id) === rawVariant)?.id : undefined;
-
-  return <main id="main-content" className="artifact-product-page">{schema ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: escapeJsonLd(schema) }} /> : null}{breadcrumb ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: escapeJsonLd(breadcrumb) }} /> : null}<ProductDetail product={product} faqs={faqs} reviews={reviews} related={related} initialVariantId={selectedVariantId} /></main>;
+  return <>
+    <main id="main-content" className="artifact-product-page">{schema ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: escapeJsonLd(schema) }} /> : null}{breadcrumb ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: escapeJsonLd(breadcrumb) }} /> : null}<ProductDetail product={product} faqs={faqs} reviews={reviews} /></main>
+    <Suspense fallback={<RelatedProductsFallback />}><RelatedProducts currentProductId={product.id} /></Suspense>
+  </>;
 }

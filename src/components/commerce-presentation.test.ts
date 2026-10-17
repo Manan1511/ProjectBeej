@@ -4,10 +4,16 @@ import { describe, expect, it, vi } from "vitest";
 import type { BeejProduct, ShopifyCart } from "@/lib/types";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }) }));
+vi.mock("@/components/cart-coordinator", () => ({
+  cartCoordinator: { adjustQuantity: vi.fn(), setQuantity: vi.fn(), flush: vi.fn(), getSnapshot: vi.fn() },
+  describeProductVariant: vi.fn(() => ({})),
+  useCartSnapshot: vi.fn(() => ({ cart: null, confirmedCart: null, loaded: true, loading: false, pending: false, message: "" })),
+}));
 
 import { ProductDetail } from "@/components/ProductDetail";
 import { ProductGrid } from "@/components/ProductGrid";
 import { CartPanel } from "@/components/CartPanel";
+import { useCartSnapshot } from "@/components/cart-coordinator";
 
 function product(preview: boolean, availableForSale: boolean): BeejProduct {
   return {
@@ -66,7 +72,6 @@ describe("commerce presentation preserves Shopify purchase safeguards", () => {
       product: product(true, true),
       faqs: [],
       reviews: [],
-      related: [],
     }));
     const addButton = markup.match(/<button[^>]*>Add to bag<\/button>/)?.[0] ?? "";
     const buyButton = markup.match(/<button[^>]*>Buy now<\/button>/)?.[0] ?? "";
@@ -82,7 +87,6 @@ describe("commerce presentation preserves Shopify purchase safeguards", () => {
       product: product(false, false),
       faqs: [],
       reviews: [],
-      related: [],
     }));
     const addButton = markup.match(/<button[^>]*>Add to bag<\/button>/)?.[0] ?? "";
     const buyButton = markup.match(/<button[^>]*>Buy now<\/button>/)?.[0] ?? "";
@@ -105,7 +109,8 @@ describe("commerce presentation preserves Shopify purchase safeguards", () => {
   });
 
   it("renders an honest empty bag state", () => {
-    const markup = renderToStaticMarkup(createElement(CartPanel, { initialCart: null, shippingConfigured: false }));
+    vi.mocked(useCartSnapshot).mockReturnValue({ cart: null, confirmedCart: null, loaded: true, loading: false, pending: false, message: "" });
+    const markup = renderToStaticMarkup(createElement(CartPanel, { shippingConfigured: false }));
 
     expect(markup).toContain("artifact-cart-empty");
     expect(markup).toMatch(/<h2>Your bag is empty<\/h2>.*?<p>Every great habit starts with a single seed\.<\/p>.*?>START SHOPPING<\/a>/);
@@ -115,7 +120,8 @@ describe("commerce presentation preserves Shopify purchase safeguards", () => {
   });
 
   it("renders live cart totals and a populated bag state without sample shipping promises", () => {
-    const markup = renderToStaticMarkup(createElement(CartPanel, { initialCart: cart, shippingConfigured: false }));
+    vi.mocked(useCartSnapshot).mockReturnValue({ cart, confirmedCart: cart, loaded: true, loading: false, pending: false, message: "" });
+    const markup = renderToStaticMarkup(createElement(CartPanel, { shippingConfigured: false }));
 
     expect(markup).toContain("artifact-cart-filled");
     expect(markup).toContain("Pudina");

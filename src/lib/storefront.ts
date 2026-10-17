@@ -1,9 +1,10 @@
 import "server-only";
-import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { readCartCookie } from "@/lib/commerce";
 import type { BeejProduct, CartLine, ProductFaq, ProductReview, ShopifyCart, ShopifyCartSnapshot, SiteSettings } from "@/lib/types";
 import { parseAnnouncement, parseHomeCopy, parseStorefrontSlides } from "@/lib/storefront-settings";
 import type { ConsentPreferences } from "@/lib/tracking-types";
+import type { CartTargetOperations } from "@/lib/cart-actions";
 
 const API_VERSION = process.env.SHOPIFY_API_VERSION || "2026-10";
 const domain = process.env.SHOPIFY_STORE_DOMAIN || "projectbeej-1686bmnd.myshopify.com";
@@ -70,28 +71,49 @@ export async function storefrontQuery<T>(
   buyerIp?: string | null,
   timeoutMs = 12000,
 ): Promise<T> {
-  const token = storefrontToken();
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    [token.isPrivate ? "Shopify-Storefront-Private-Token" : "X-Shopify-Storefront-Access-Token"]: token.value,
-  };
-  if (token.isPrivate) {
-    const safeIp = normalizeBuyerIp(buyerIp);
-    if (safeIp) headers["Shopify-Storefront-Buyer-IP"] = safeIp;
-  }
+  const startedAt = performance.now();
+  const measureName = `beej:shopify:${/^\s*mutation\b/i.test(query) ? "mutation" : "read"}`;
+  try {
+    const token = storefrontToken();
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      [token.isPrivate ? "Shopify-Storefront-Private-Token" : "X-Shopify-Storefront-Access-Token"]: token.value,
+    };
+    if (token.isPrivate) {
+      const safeIp = normalizeBuyerIp(buyerIp);
+      if (safeIp) headers["Shopify-Storefront-Buyer-IP"] = safeIp;
+    }
 
-  const response = await fetch(endpoint(), {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ query, variables }),
-    cache: "no-store",
-    signal: AbortSignal.timeout(timeoutMs),
-  });
-  if (!response.ok) throw new Error(`Shopify Storefront API returned ${response.status}.`);
-  const payload = (await response.json()) as GraphqlResponse<T>;
-  if (payload.errors?.length) throw new Error(payload.errors[0]?.message || "Shopify Storefront API request failed.");
-  if (!payload.data) throw new Error("Shopify Storefront API returned no data.");
-  return payload.data;
+    const response = await fetch(endpoint(), {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ query, variables }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (!response.ok) throw new Error(`Shopify Storefront API returned ${response.status}.`);
+    const payload = (await response.json()) as GraphqlResponse<T>;
+    if (payload.errors?.length) throw new Error(payload.errors[0]?.message || "Shopify Storefront API request failed.");
+    if (!payload.data) throw new Error("Shopify Storefront API returned no data.");
+    return payload.data;
+  } finally {
+    performance.clearMeasures(measureName);
+    performance.measure(measureName, { start: startedAt, end: performance.now() });
+  }
+}
+
+/** Caches only successful public GraphQL results. Shopper-specific cart and checkout reads bypass this wrapper. */
+async function publicStorefrontQuery<T, Result = T>(
+  query: string,
+  variables: Record<string, unknown> = {},
+  validate: (data: T) => Result = ((data: T) => data as unknown as Result),
+): Promise<Result> {
+  const cachedQuery = unstable_cache(
+    async () => validate(await storefrontQuery<T>(query, variables)),
+    ["project-beej-public-storefront", domain, API_VERSION, getStorefrontMode(), query, JSON.stringify(variables)],
+    { revalidate: 60 },
+  );
+  return cachedQuery();
 }
 
 type ShopifyProductRaw = {
@@ -144,6 +166,11 @@ export function parseApprovedReviews(value: string | undefined): ProductReview[]
 }
 
 function mapProduct(raw: ShopifyProductRaw): BeejProduct {
+  if (!raw || typeof raw.id !== "string" || typeof raw.handle !== "string" || typeof raw.title !== "string" || typeof raw.description !== "string"
+    || !raw.priceRange?.minVariantPrice || typeof raw.priceRange.minVariantPrice.amount !== "string"
+    || !Array.isArray(raw.variants?.nodes)) {
+    throw new Error("Shopify returned incomplete product data.");
+  }
   const images = (raw.images?.nodes || []).map((image) => ({ url: image.url, alt: image.altText || raw.title }));
   if (images.length === 0 && raw.featuredImage) images.push({ url: raw.featuredImage.url, alt: raw.featuredImage.altText || raw.title });
   return {
@@ -185,34 +212,39 @@ function mapPreviewProduct(raw: (typeof previewCatalog)[number]): BeejProduct {
 
 export const previewProducts = previewCatalog.map(mapPreviewProduct);
 
-async function queryProducts(query: string, variables: Record<string, unknown> = {}, buyerIp?: string | null): Promise<BeejProduct[]> {
+async function queryProducts(query: string, variables: Record<string, unknown> = {}): Promise<BeejProduct[]> {
   try {
-    const data = await storefrontQuery<{ products: { nodes: ShopifyProductRaw[] }; collection?: { products: { nodes: ShopifyProductRaw[] } } }>(query, variables, buyerIp);
-    return (data.collection?.products.nodes ?? data.products.nodes).map(mapProduct);
+    return await publicStorefrontQuery<{
+      products?: { nodes: ShopifyProductRaw[] };
+      collection?: { products: { nodes: ShopifyProductRaw[] } | null } | null;
+    }, BeejProduct[]>(query, variables, (data) => {
+      const nodes = data.collection === null ? [] : data.collection?.products?.nodes ?? data.products?.nodes;
+      if (!Array.isArray(nodes)) throw new Error("Shopify returned incomplete catalog data.");
+      return nodes.map(mapProduct);
+    });
   } catch (error) {
     if (getStorefrontMode() === "preview") return [];
     throw error;
   }
 }
 
-export async function getProducts(buyerIp?: string | null): Promise<BeejProduct[]> {
-  const products = await queryProducts(`query BeejProducts { products(first: 20, sortKey: TITLE) { nodes { ${PRODUCT_FIELDS} } } }`, {}, buyerIp);
+export async function getProducts(): Promise<BeejProduct[]> {
+  const products = await queryProducts(`query BeejProducts { products(first: 20, sortKey: TITLE) { nodes { ${PRODUCT_FIELDS} } } }`);
   if (!products.length && getStorefrontMode() === "preview") return previewProducts;
   return products;
 }
 
-export async function getCardProducts(buyerIp?: string | null): Promise<BeejProduct[]> {
-  const products = await queryProducts(`query BeejProductCards { products(first: 20, sortKey: TITLE) { nodes { ${PRODUCT_CARD_FIELDS} } } }`, {}, buyerIp);
+export async function getCardProducts(): Promise<BeejProduct[]> {
+  const products = await queryProducts(`query BeejProductCards { products(first: 20, sortKey: TITLE) { nodes { ${PRODUCT_CARD_FIELDS} } } }`);
   if (!products.length && getStorefrontMode() === "preview") return previewProducts;
   return products;
 }
 
-/** Shares public, request-local reads across layouts, pages and metadata generation. */
-export async function getCollectionProducts(handle: string, buyerIp?: string | null): Promise<BeejProduct[]> {
+/** Shares validated public collection data across pages and metadata generation. */
+export async function getCollectionProducts(handle: string): Promise<BeejProduct[]> {
   const products = await queryProducts(
     `query BeejCollection($handle: String!) { collection(handle: $handle) { products(first: 20) { nodes { ${PRODUCT_FIELDS} } } } }`,
     { handle },
-    buyerIp,
   );
   if (!products.length && getStorefrontMode() === "preview") {
     return previewProducts.filter((product) => product.collectionHandles.includes(handle));
@@ -220,11 +252,10 @@ export async function getCollectionProducts(handle: string, buyerIp?: string | n
   return products;
 }
 
-export async function getCardCollectionProducts(handle: string, buyerIp?: string | null): Promise<BeejProduct[]> {
+export async function getCardCollectionProducts(handle: string): Promise<BeejProduct[]> {
   const products = await queryProducts(
     `query BeejCollectionCards($handle: String!) { collection(handle: $handle) { products(first: 20) { nodes { ${PRODUCT_CARD_FIELDS} } } } }`,
     { handle },
-    buyerIp,
   );
   if (!products.length && getStorefrontMode() === "preview") {
     return previewProducts.filter((product) => product.collectionHandles.includes(handle));
@@ -232,78 +263,87 @@ export async function getCardCollectionProducts(handle: string, buyerIp?: string
   return products;
 }
 
-export async function getProduct(handle: string, buyerIp?: string | null): Promise<BeejProduct | null> {
+export async function getProduct(handle: string): Promise<BeejProduct | null> {
   try {
-    const data = await storefrontQuery<{ productByHandle: ShopifyProductRaw | null }>(
+    return await publicStorefrontQuery<{ productByHandle: ShopifyProductRaw | null }, BeejProduct | null>(
       `query BeejProduct($handle: String!) { productByHandle(handle: $handle) { ${PRODUCT_FIELDS} } }`,
       { handle },
-      buyerIp,
+      (data) => data.productByHandle ? mapProduct(data.productByHandle) : null,
     );
-    return data.productByHandle ? mapProduct(data.productByHandle) : getStorefrontMode() === "preview" ? previewProducts.find((product) => product.handle === handle) || null : null;
   } catch (error) {
     if (getStorefrontMode() === "preview") return previewProducts.find((product) => product.handle === handle) || null;
     throw error;
   }
 }
 
-export const getRequestCachedProduct = cache((handle: string, buyerIp?: string | null) => getProduct(handle, buyerIp));
+export function getRequestCachedProduct(handle: string): Promise<BeejProduct | null> { return getProduct(handle); }
 
-export async function getSiteSettings(buyerIp?: string | null): Promise<SiteSettings> {
+function mapSiteSettings(data: { shop?: { id?: string; paymentSettings?: { currencyCode?: string }; storefrontSettings?: { value: string } | null } }): SiteSettings {
+  if (!data.shop || typeof data.shop !== "object") throw new Error("Shopify returned incomplete storefront settings.");
+  let parsed: Record<string, unknown> = {};
   try {
-    const data = await storefrontQuery<{ shop: { id?: string; paymentSettings?: { currencyCode?: string }; storefrontSettings?: { value: string } | null } }>(
+    const value = JSON.parse(data.shop.storefrontSettings?.value || "{}") as unknown;
+    if (value && typeof value === "object" && !Array.isArray(value)) parsed = value as Record<string, unknown>;
+  } catch { /* Invalid optional settings are ignored. */ }
+  const settings: SiteSettings = {
+    ...(data.shop.id && /^gid:\/\/shopify\/Shop\/\d+$/.test(data.shop.id) ? { shopId: data.shop.id } : {}),
+    ...(data.shop.paymentSettings?.currencyCode && /^[A-Z]{3}$/.test(data.shop.paymentSettings.currencyCode) ? { currencyCode: data.shop.paymentSettings.currencyCode } : {}),
+  };
+  const homeCopy = parseHomeCopy(parsed.homeCopy);
+  if (homeCopy) settings.homeCopy = homeCopy;
+  const announcement = parseAnnouncement(parsed.announcement);
+  if (announcement) settings.announcement = announcement;
+  if (typeof parsed.contactEmail === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parsed.contactEmail)) settings.contactEmail = parsed.contactEmail;
+  if (typeof parsed.instagramUrl === "string" && /^https:\/\/(www\.)?instagram\.com\//.test(parsed.instagramUrl)) settings.instagramUrl = parsed.instagramUrl;
+  if (typeof parsed.whatsappUrl === "string" && /^https:\/\/(wa\.me|api\.whatsapp\.com)\//.test(parsed.whatsappUrl)) settings.whatsappUrl = parsed.whatsappUrl;
+  if (Array.isArray(parsed.featuredHandles)) settings.featuredHandles = parsed.featuredHandles.filter((handle): handle is string => typeof handle === "string").slice(0, 20);
+  if (Array.isArray(parsed.slides)) settings.slides = parseStorefrontSlides(parsed.slides);
+  return settings;
+}
+
+export async function getSiteSettings(): Promise<SiteSettings> {
+  try {
+    return await publicStorefrontQuery<{ shop?: { id?: string; paymentSettings?: { currencyCode?: string }; storefrontSettings?: { value: string } | null } }, SiteSettings>(
       `query BeejSettings { shop { id paymentSettings { currencyCode } storefrontSettings: metafield(namespace: "beej", key: "storefront_settings") { value } } }`,
       {},
-      buyerIp,
+      mapSiteSettings,
     );
-    const parsed = JSON.parse(data.shop.storefrontSettings?.value || "{}") as Record<string, unknown>;
-    const settings: SiteSettings = {
-      ...(data.shop.id && /^gid:\/\/shopify\/Shop\/\d+$/.test(data.shop.id) ? { shopId: data.shop.id } : {}),
-      ...(data.shop.paymentSettings?.currencyCode && /^[A-Z]{3}$/.test(data.shop.paymentSettings.currencyCode) ? { currencyCode: data.shop.paymentSettings.currencyCode } : {}),
-    };
-    const homeCopy = parseHomeCopy(parsed.homeCopy);
-    if (homeCopy) settings.homeCopy = homeCopy;
-    const announcement = parseAnnouncement(parsed.announcement);
-    if (announcement) settings.announcement = announcement;
-    if (typeof parsed.contactEmail === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parsed.contactEmail)) settings.contactEmail = parsed.contactEmail;
-    if (typeof parsed.instagramUrl === "string" && /^https:\/\/(www\.)?instagram\.com\//.test(parsed.instagramUrl)) settings.instagramUrl = parsed.instagramUrl;
-    if (typeof parsed.whatsappUrl === "string" && /^https:\/\/(wa\.me|api\.whatsapp\.com)\//.test(parsed.whatsappUrl)) settings.whatsappUrl = parsed.whatsappUrl;
-    if (Array.isArray(parsed.featuredHandles)) settings.featuredHandles = parsed.featuredHandles.filter((handle): handle is string => typeof handle === "string").slice(0, 20);
-    if (Array.isArray(parsed.slides)) settings.slides = parseStorefrontSlides(parsed.slides);
-    return settings;
   } catch {
-    return {};
+    if (getStorefrontMode() === "preview") return {};
+    throw new Error("Storefront settings could not be loaded. Try again.");
   }
 }
 
-export const getRequestCachedSiteSettings = cache((buyerIp?: string | null) => getSiteSettings(buyerIp));
+export function getRequestCachedSiteSettings(): Promise<SiteSettings> { return getSiteSettings(); }
 
 export type ShopifyPage = { title: string; body: string; bodySummary: string; seo?: { title?: string | null; description?: string | null } | null };
 
-export async function getShopifyPage(handle: string, buyerIp?: string | null): Promise<ShopifyPage | null> {
-  try {
-    const data = await storefrontQuery<{ pageByHandle: ShopifyPage | null }>(
+export async function getShopifyPage(handle: string): Promise<ShopifyPage | null> {
+  return await publicStorefrontQuery<{ pageByHandle: ShopifyPage | null }, ShopifyPage | null>(
       `query BeejPage($handle: String!) { pageByHandle(handle: $handle) { title body bodySummary seo { title description } } }`,
       { handle },
-      buyerIp,
+      (data) => {
+        const page = data.pageByHandle;
+        if (page === null) return null;
+        if (!page || typeof page.title !== "string" || typeof page.body !== "string" || typeof page.bodySummary !== "string") throw new Error("Shopify returned incomplete page data.");
+        return page;
+      },
     );
-    return data.pageByHandle;
-  } catch {
-    return null;
-  }
 }
 
 export type ShopifyPolicy = { title: string; body: string; url: string };
-export async function getShopifyPolicy(key: "privacyPolicy" | "refundPolicy" | "termsOfService", buyerIp?: string | null): Promise<ShopifyPolicy | null> {
-  try {
-    const data = await storefrontQuery<{ shop: Record<string, ShopifyPolicy | null> }>(
+export async function getShopifyPolicy(key: "privacyPolicy" | "refundPolicy" | "termsOfService"): Promise<ShopifyPolicy | null> {
+  return await publicStorefrontQuery<{ shop?: Record<string, ShopifyPolicy | null> }, ShopifyPolicy | null>(
       `query BeejPolicy { shop { ${key} { title body url } } }`,
       {},
-      buyerIp,
+      (data) => {
+        if (!data.shop || typeof data.shop !== "object") throw new Error("Shopify returned incomplete policy data.");
+        const policy = data.shop[key];
+        if (policy === null || policy === undefined) return null;
+        if (typeof policy.title !== "string" || typeof policy.body !== "string" || typeof policy.url !== "string") throw new Error("Shopify returned incomplete policy data.");
+        return policy;
+      },
     );
-    return data.shop[key] || null;
-  } catch {
-    return null;
-  }
 }
 
 const CART_FIELDS = `id checkoutUrl totalQuantity cost { subtotalAmount { amount currencyCode } totalAmount { amount currencyCode } } lines(first: 20) { nodes { id quantity merchandise { ... on ProductVariant { id title availableForSale price { amount currencyCode } selectedOptions { name value } product { id title handle productType featuredImage { url altText } } } } } }`;
@@ -392,6 +432,45 @@ export async function removeShopifyCartLines(cartId: string, lineIds: string[], 
     buyerIp,
   );
   return { ...data, cartLinesRemove: normalizeCartMutation(data.cartLinesRemove) };
+}
+
+/** Runs all non-empty line operations in a single serial GraphQL mutation request. */
+export async function applyShopifyCartLineTargets(cartId: string, operations: CartTargetOperations, buyerIp?: string | null) {
+  const definitions = ["$cartId: ID!"];
+  const fields: string[] = [];
+  const aliases: string[] = [];
+  const variables: Record<string, unknown> = { cartId };
+  const selection = `{ cart { ${CART_FIELDS} } userErrors { message code } warnings { message } }`;
+
+  if (operations.updates.length) {
+    definitions.push("$updates: [CartLineUpdateInput!]!");
+    variables.updates = operations.updates;
+    fields.push(`updated: cartLinesUpdate(cartId: $cartId, lines: $updates) ${selection}`);
+    aliases.push("updated");
+  }
+  if (operations.removals.length) {
+    definitions.push("$lineIds: [ID!]!");
+    variables.lineIds = operations.removals;
+    fields.push(`removed: cartLinesRemove(cartId: $cartId, lineIds: $lineIds) ${selection}`);
+    aliases.push("removed");
+  }
+  if (operations.additions.length) {
+    definitions.push("$additions: [CartLineInput!]!");
+    variables.additions = operations.additions;
+    fields.push(`added: cartLinesAdd(cartId: $cartId, lines: $additions) ${selection}`);
+    aliases.push("added");
+  }
+  if (fields.length === 0) throw new Error("A cart update must include at least one changed line.");
+
+  const query = `mutation BeejCartTargets(${definitions.join(", ")}) { ${fields.join(" ")} }`;
+  const data = await storefrontQuery<Record<string, ShopifyCartMutation | null>>(query, variables, buyerIp);
+  const mutations = aliases.map((alias) => data[alias]).filter((value): value is ShopifyCartMutation => Boolean(value));
+  const last = mutations.at(-1);
+  return {
+    cart: normalizeShopifyCart(last?.cart || null),
+    userErrors: mutations.flatMap((mutation) => mutation.userErrors),
+    warnings: mutations.flatMap((mutation) => mutation.warnings),
+  };
 }
 
 export type ShopifyCartAttribute = { key: string; value: string };

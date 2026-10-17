@@ -15,9 +15,16 @@ export function shouldLoadSproutVideo({ prefersReducedMotion, saveData, effectiv
   return !prefersReducedMotion && !saveData && effectiveType !== "slow-2g" && effectiveType !== "2g";
 }
 
+export function shouldPlaySproutVideo(intersecting: boolean, pageVisible: boolean): boolean {
+  return intersecting && pageVisible;
+}
+
 export function SproutVideo() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [shouldLoad, setShouldLoad] = useState(false);
+  const [inViewport, setInViewport] = useState(false);
+  const [pageVisible, setPageVisible] = useState(false);
 
   useEffect(() => {
     const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
@@ -34,24 +41,39 @@ export function SproutVideo() {
 
     if (typeof IntersectionObserver === "undefined") return;
 
-    const observer = new IntersectionObserver((entries) => {
+    const preloadObserver = new IntersectionObserver((entries) => {
       if (entries.some((entry) => entry.isIntersecting)) {
         setShouldLoad(true);
-        observer.disconnect();
+        preloadObserver.disconnect();
       }
     }, { rootMargin: "300px 0px" });
-
-    observer.observe(container);
-    return () => observer.disconnect();
+    const playbackObserver = new IntersectionObserver((entries) => setInViewport(entries.some((entry) => entry.isIntersecting)));
+    const updatePageVisibility = () => setPageVisible(document.visibilityState === "visible");
+    updatePageVisibility();
+    document.addEventListener("visibilitychange", updatePageVisibility);
+    preloadObserver.observe(container);
+    playbackObserver.observe(container);
+    return () => {
+      preloadObserver.disconnect();
+      playbackObserver.disconnect();
+      document.removeEventListener("visibilitychange", updatePageVisibility);
+    };
   }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !shouldLoad) return;
+    if (shouldPlaySproutVideo(inViewport, pageVisible)) void video.play().catch(() => undefined);
+    else video.pause();
+  }, [inViewport, pageVisible, shouldLoad]);
 
   return (
     <div ref={containerRef} className="story-image artifact-story-image" role="img" aria-label="A sprout growing from the soil">
       {shouldLoad ? (
         <video
+          ref={videoRef}
           className="artifact-story-seedling"
           src={SPROUT_VIDEO_SRC}
-          autoPlay
           muted
           loop
           playsInline

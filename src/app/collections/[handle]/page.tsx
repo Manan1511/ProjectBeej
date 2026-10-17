@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ProductGrid } from "@/components/ProductGrid";
-import { getCardCollectionProducts } from "@/lib/storefront";
-import { requestBuyerIp } from "@/lib/request-ip";
+import { CollectionCatalog, CollectionCatalogFallback } from "@/components/CollectionCatalog";
 import { getPublicSiteUrl } from "@/lib/site-url";
 
 const collections = {
@@ -24,6 +23,5 @@ export default async function CollectionPage({ params }: Params) {
   const { handle } = await params;
   if (!(handle in collections)) notFound();
   const collection = collections[handle as Handle];
-  const products = await getCardCollectionProducts(handle, await requestBuyerIp()).catch(() => []);
-  return <main id="main-content"><section className="collection-hero"><span className="eyebrow">{collection.eyebrow}</span><h1>{collection.title}<span>.</span></h1><p>{collection.description}</p></section><section className="catalog-section"><div className="breadcrumbs"><Link href="/shop">Shop all</Link><span>/</span><span>{collection.title}</span></div><ProductGrid products={products} filters listName={collection.title} /></section></main>;
+  return <main id="main-content"><section className="collection-hero"><span className="eyebrow">{collection.eyebrow}</span><h1>{collection.title}<span>.</span></h1><p>{collection.description}</p></section><section className="catalog-section"><div className="breadcrumbs"><Link href="/shop">Shop all</Link><span>/</span><span>{collection.title}</span></div></section><Suspense fallback={<CollectionCatalogFallback />}><CollectionCatalog handle={handle} title={collection.title} /></Suspense></main>;
 }

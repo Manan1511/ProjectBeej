@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { serializeCartWrite } from "./cart-request";
+import { getBrowserCartTabId, serializeCartWrite, withBrowserCartLock } from "./cart-request";
 
 describe("cart write scheduling", () => {
+  it("keeps a stable source id for this tab's cart notifications", () => {
+    expect(getBrowserCartTabId()).toBe(getBrowserCartTabId());
+  });
+
   it("keeps bag writes ordered without making Buy now wait behind them", async () => {
     const events: string[] = [];
     let releaseFirst!: () => void;
@@ -43,5 +47,16 @@ describe("cart write scheduling", () => {
     expect(measure).toHaveBeenCalledWith("beej:cart:timing-test:queue", expect.objectContaining({ start: expect.any(Number), end: expect.any(Number) }));
     expect(measure).toHaveBeenCalledWith("beej:cart:timing-test:request", expect.objectContaining({ start: expect.any(Number), end: expect.any(Number) }));
     measure.mockRestore();
+  });
+
+  it("uses the same-origin browser lock for cart writes when the browser supports it", async () => {
+    const request = vi.fn(async (_name: string, operation: () => Promise<string>) => operation());
+    vi.stubGlobal("navigator", { locks: { request } });
+    try {
+      await expect(withBrowserCartLock(async () => "saved")).resolves.toBe("saved");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+    expect(request).toHaveBeenCalledWith("project-beej-cart", expect.any(Function));
   });
 });

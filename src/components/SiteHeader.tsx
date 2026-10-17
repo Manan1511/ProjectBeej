@@ -1,24 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getShopifyCartCount } from "@/lib/storefront";
-import { readStoredCartId } from "@/lib/cart-cookie";
-import { requestBuyerIp } from "@/lib/request-ip";
 import { MobileNav } from "@/components/MobileNav";
 import { CartCountLink } from "@/components/CartCountLink";
 
-export async function SiteHeader({ settings }: { settings: import("@/lib/types").SiteSettings }) {
-  const oldAnnouncement = "Welcome to snacking that’s rooted in nature 🌱";
-  const announcement = settings.announcement && settings.announcement !== oldAnnouncement
-    ? settings.announcement
-    : "Free shipping on orders above ₹499 🌱";
-  let count = 0;
-  try {
-    const cartId = await readStoredCartId();
-    if (cartId) count = await getShopifyCartCount(cartId, await requestBuyerIp());
-  } catch {
-    count = 0;
-  }
-
+export function SiteHeader() {
+  const announcement = "Free shipping on orders above ₹499 🌱";
   return (
     <>
       <div className="announcement">{announcement}</div>
@@ -33,9 +19,9 @@ export async function SiteHeader({ settings }: { settings: import("@/lib/types")
             <Image src="/assets/logo-wordmark.png" alt="Project Beej" fill sizes="150px" loading="eager" />
           </Link>
           <div className="nav-links nav-right">
-            <CartCountLink initialCount={count} />
+            <CartCountLink />
           </div>
-          <MobileNav count={count} />
+          <MobileNav />
         </nav>
       </header>
     </>

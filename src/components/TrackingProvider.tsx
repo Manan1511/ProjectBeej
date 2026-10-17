@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
-import { captureInitialLanding, emitCommerceEvent, persistConsent, readStoredConsent, removeIdentifiersForWithdrawal, setTrackingRuntime, syncTrackingContext } from "@/lib/tracking-client";
+import { captureInitialLanding, emitCommerceEvent, emitShopifyPageView, persistConsent, readStoredConsent, removeIdentifiersForWithdrawal, setTrackingRuntime, syncTrackingContext } from "@/lib/tracking-client";
 import type { PublicTrackingConfig } from "@/lib/tracking-config";
 import type { ConsentPreferences } from "@/lib/tracking-types";
+import { useStorefrontSettings } from "@/components/StorefrontSettingsProvider";
 
 const NO_CONSENT: ConsentPreferences = { analytics: false, marketing: false, preferences: false };
 const LOADING_CONSENT = "beej:loading";
@@ -107,6 +108,9 @@ export function TrackingProvider({
   currency?: string;
 }) {
   const pathname = usePathname();
+  const { settings: storefrontSettings } = useStorefrontSettings();
+  const activeShopId = storefrontSettings.shopId || shopId;
+  const activeCurrency = storefrontSettings.currencyCode || currency;
   const consentSnapshot = useSyncExternalStore(subscribeToConsent, getConsentSnapshot, getServerConsentSnapshot);
   const consent = useMemo(() => {
     if (!consentSnapshot || consentSnapshot === LOADING_CONSENT) return NO_CONSENT;
@@ -122,6 +126,7 @@ export function TrackingProvider({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [syncMessage, setSyncMessage] = useState("");
   const lastPageView = useRef("");
+  const lastShopifyPageView = useRef("");
   const initialSync = useRef(false);
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
 
@@ -132,14 +137,14 @@ export function TrackingProvider({
     removeIdentifiersForWithdrawal(next);
     setSettingsOpen(false);
     setSyncMessage("");
-    setTrackingRuntime({ config, consent: next, shopId, currency });
+    setTrackingRuntime({ config, consent: next, shopId: activeShopId, currency: activeCurrency });
 
     if (withdrew) removeTrackingParamsFromUrl(!next.analytics && !next.marketing);
     if (config.enabled && (next.analytics || next.marketing)) await new Promise((resolve) => window.setTimeout(resolve, 250));
     const synced = await syncTrackingContext(next, config);
     if (!synced && config.enabled) setSyncMessage("Your choice is saved on this device. Server sync is unavailable, so server purchase reporting stays off.");
     if (withdrew) window.location.reload();
-  }, [consent, config, currency, shopId]);
+  }, [activeCurrency, activeShopId, consent, config]);
 
   useEffect(() => {
     captureInitialLanding(config);
@@ -150,16 +155,22 @@ export function TrackingProvider({
 
   useEffect(() => {
     if (!ready) return;
-    setTrackingRuntime({ config, consent, shopId, currency });
+    setTrackingRuntime({ config, consent, shopId: activeShopId, currency: activeCurrency });
+    let emittedPageView = false;
     if (consent.analytics && pathname && lastPageView.current !== pathname) {
       lastPageView.current = pathname;
+      emittedPageView = true;
       emitCommerceEvent({
         name: "page_view",
         page_location: `${window.location.origin}${pathname}`,
         page_title: document.title,
       });
     }
-  }, [consent, config, currency, pathname, ready, shopId]);
+    if (consent.analytics && pathname && activeShopId && lastShopifyPageView.current !== pathname) {
+      if (!emittedPageView) emitShopifyPageView();
+      lastShopifyPageView.current = pathname;
+    }
+  }, [activeCurrency, activeShopId, consent, config, pathname, ready]);
 
   useEffect(() => {
     if (!ready || initialSync.current) return;
@@ -175,7 +186,7 @@ export function TrackingProvider({
       const saved = readStoredConsent();
       const next = saved?.preferences || NO_CONSENT;
       const withdrew = (consent.analytics && !next.analytics) || (consent.marketing && !next.marketing);
-      setTrackingRuntime({ config, consent: next, shopId, currency });
+      setTrackingRuntime({ config, consent: next, shopId: activeShopId, currency: activeCurrency });
       void syncTrackingContext(next, config);
       if (withdrew) {
         removeIdentifiersForWithdrawal(next);
@@ -185,7 +196,7 @@ export function TrackingProvider({
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
-  }, [config, consent, currency, shopId]);
+  }, [activeCurrency, activeShopId, config, consent]);
 
   return (
     <>

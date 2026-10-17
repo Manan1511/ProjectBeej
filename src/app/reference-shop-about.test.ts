@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import Image from "next/image";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/storefront", () => ({ getCardProducts: vi.fn(), getShopifyPage: vi.fn(), getShopifyCartCount: vi.fn() }));
+vi.mock("@/lib/storefront", () => ({ getCardProducts: vi.fn(), getShopifyPage: vi.fn() }));
 vi.mock("@/lib/request-ip", () => ({ requestBuyerIp: vi.fn(async () => null) }));
 vi.mock("@/lib/site-url", () => ({ getPublicSiteUrl: () => null }));
 vi.mock("@/lib/cart-cookie", () => ({ readStoredCartId: vi.fn(async () => "cart-id") }));
@@ -16,7 +16,8 @@ import { ShopEditorialSections } from "@/components/ShopEditorialSections";
 import { StoreSearchForm } from "@/components/StoreSearchForm";
 import { MobileNav } from "@/components/MobileNav";
 import { SiteHeader } from "@/components/SiteHeader";
-import { getCardProducts, getShopifyCartCount, getShopifyPage } from "@/lib/storefront";
+import { getCardProducts, getShopifyPage } from "@/lib/storefront";
+import { ShopCatalog, ShopCatalogFallback } from "@/components/ShopCatalog";
 
 function childrenOf(node: ReactNode): ReactNode | undefined {
   if (!isValidElement(node)) return undefined;
@@ -61,31 +62,30 @@ describe("Shop and About match the approved artifact", () => {
   beforeEach(() => {
     vi.mocked(getCardProducts).mockResolvedValue([]);
     vi.mocked(getShopifyPage).mockResolvedValue(null);
-    vi.mocked(getShopifyCartCount).mockResolvedValue(3);
   });
 
-  it("keeps the shared desktop header routes and displays the live bag count", async () => {
-    const header = await SiteHeader({ settings: {} });
+  it("keeps the shared desktop header routes and reserves a hydrated live bag count", async () => {
+    const header = SiteHeader();
     const links = collectLinks(header);
     const hrefs = links.map(({ href }) => href);
-    const cartLink = findElements(header, CartCountLink)[0] as ReactElement<{ initialCount: number }> | undefined;
+    const cartLink = findElements(header, CartCountLink)[0] as ReactElement<Record<string, unknown>> | undefined;
 
     expect(hrefs).toEqual(expect.arrayContaining(["/", "/shop", "/about"]));
-    expect(cartLink?.props.initialCount).toBe(3);
+    expect(cartLink?.props).toEqual({});
     const cartMarkup = cartLink ? renderToStaticMarkup(cartLink) : "";
     expect(cartMarkup).toContain('href="/cart"');
-    expect(cartMarkup).toContain('aria-label="Bag, 3 items"');
-    expect(cartMarkup).toContain('class="bag-count">3</span>');
+    expect(cartMarkup).toContain('aria-label="Bag, loading"');
+    expect(cartMarkup).toContain('class="bag-count">');
   });
 
   it("keeps Home, Shop, Our Story, and Bag in the mobile menu without a Contact route", () => {
-    const markup = renderToStaticMarkup(createElement(MobileNav, { count: 3 }));
+    const markup = renderToStaticMarkup(createElement(MobileNav));
 
     expect(markup).toContain('href="/"');
     expect(markup).toContain('href="/shop"');
     expect(markup).toContain('href="/about"');
     expect(markup).toContain('href="/cart"');
-    expect(markup).toContain("Bag (3)");
+    expect(markup).toContain('href="/cart">Bag</a>');
     expect(markup).not.toContain('href="/contact"');
   });
 
@@ -95,21 +95,14 @@ describe("Shop and About match the approved artifact", () => {
     const text = collectText(children).join(" ").replace(/\s+/g, " ");
     const headings = findElements(children, "h1");
     const grids = findElements(children, ProductGrid);
-    const grid = grids[0] as ReactElement<{ filters?: boolean; presentation?: string; toolbar?: ReactElement<{ compact?: boolean }> }> | undefined;
 
     expect(headings).toHaveLength(1);
     expect(collectText(childrenOf(headings[0])).join("")).toBe("Shop all");
     expect(text).toContain("Snacks made from nature's humblest ingredients.");
     expect(text).toContain("Free shipping on orders above ₹499.");
     expect(text).not.toMatch(/Discover the current Beej range|Browse the range|Find your flavour\./);
-    expect(grid?.props.filters).toBe(true);
-    expect(grid?.props.presentation).toBe("shop");
-    expect(grid?.props.toolbar?.type).toBe(StoreSearchForm);
-    expect(grid?.props.toolbar?.props.compact).toBe(true);
-    const searchMarkup = grid?.props.toolbar ? renderToStaticMarkup(grid.props.toolbar) : "";
-    expect(searchMarkup).toContain("search-form-compact");
-    expect(searchMarkup).toContain('aria-label="Search snacks"');
-    expect(searchMarkup).not.toContain("Search the Beej pantry by flavour or snack type.");
+    expect(grids).toHaveLength(0);
+    expect(renderToStaticMarkup(ShopCatalogFallback())).toContain("Loading products from Shopify…");
     expect(collectClasses(children).some((value) => value.split(/\s+/).includes("artifact-shop-hero"))).toBe(true);
   });
 
@@ -128,11 +121,17 @@ describe("Shop and About match the approved artifact", () => {
       metafields: {},
       preview: false,
     }]);
-    const page = await ShopPage({ searchParams: Promise.resolve({ q: "pudina" }) });
-    const grid = findElements(childrenOf(page), ProductGrid)[0] as ReactElement<{ filters?: boolean; products: unknown[] }> | undefined;
+    const catalog = await ShopCatalog({ searchParams: Promise.resolve({ q: "pudina" }) });
+    const grid = findElements(catalog, ProductGrid)[0] as ReactElement<{ filters?: boolean; products: unknown[]; toolbar?: ReactElement<{ compact?: boolean }> }> | undefined;
 
     expect(grid?.props.filters).toBe(true);
     expect(grid?.props.products).toHaveLength(1);
+    expect(grid?.props.toolbar?.type).toBe(StoreSearchForm);
+    expect(grid?.props.toolbar?.props.compact).toBe(true);
+    const searchMarkup = grid?.props.toolbar ? renderToStaticMarkup(grid.props.toolbar) : "";
+    expect(searchMarkup).toContain("search-form-compact");
+    expect(searchMarkup).toContain('aria-label="Search snacks"');
+    expect(searchMarkup).not.toContain("Search the Beej pantry by flavour or snack type.");
   });
 
   it("places the Snack spotted collage and benefits banner below the shop catalog", async () => {

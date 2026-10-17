@@ -24,7 +24,7 @@ function topLevelClasses(node: ReactNode): string[] {
   });
 }
 
-type TestElementProps = { children?: ReactNode; className?: string; autoPlay?: boolean; muted?: boolean; loop?: boolean; playsInline?: boolean; preload?: string; poster?: string };
+type TestElementProps = { children?: ReactNode; className?: string; href?: string; "aria-label"?: string; autoPlay?: boolean; muted?: boolean; loop?: boolean; playsInline?: boolean; preload?: string; poster?: string };
 
 function elements(node: ReactNode): Array<ReactElement<TestElementProps>> {
   if (Array.isArray(node)) return node.flatMap(elements);
@@ -64,6 +64,24 @@ describe("homepage matches the approved artifact", () => {
     expect(text).toContain("Healthy shouldn't mean boring. Every snack has to earn its seasoning.");
     expect(text).toContain("Small, mindful choices that add up to healthier everyday habits.");
     expect(text).not.toContain(String.fromCodePoint(0x2014));
+  });
+
+  it("makes each entire player card link to its flavour product", async () => {
+    const page = await HomePage();
+    const root = page as ReactElement<{ children?: ReactNode }>;
+    const cards = elements(root.props.children).filter((node) => node.props.className === "squad-card");
+
+    expect(cards).toHaveLength(4);
+    expect(cards.map((card) => card.props.href)).toEqual([
+      "/products/peri-peri",
+      "/products/cheese",
+      "/products/himalayan-salt-pepper",
+      "/products/pudina",
+    ]);
+    for (const card of cards) {
+      expect(collectText(card.props.children).join(" ")).toContain("Shop now");
+      expect(elements(card.props.children).some((node) => Boolean(node.props.href))).toBe(false);
+    }
   });
 
   it("keeps the centered ticker continuously filled and uses the sprout video", async () => {

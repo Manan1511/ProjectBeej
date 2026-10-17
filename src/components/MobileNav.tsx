@@ -4,9 +4,9 @@ import { useRef } from "react";
 import Link from "next/link";
 import { useCartCount } from "@/components/CartCountLink";
 
-export function MobileNav({ count }: { count: number }) {
+export function MobileNav() {
   const menuRef = useRef<HTMLDetailsElement>(null);
-  const cartCount = useCartCount(count);
+  const cartCount = useCartCount();
 
   function closeMenu() {
     if (menuRef.current) menuRef.current.open = false;
@@ -19,7 +19,7 @@ export function MobileNav({ count }: { count: number }) {
         <Link href="/" onClick={closeMenu}>Home</Link>
         <Link href="/shop" onClick={closeMenu}>Shop the snacks</Link>
         <Link href="/about" onClick={closeMenu}>Our story</Link>
-        <Link href="/cart" onClick={closeMenu}>Bag ({cartCount})</Link>
+        <Link href="/cart" onClick={closeMenu}>{cartCount === null ? "Bag" : `Bag (${cartCount})`}</Link>
       </div>
     </details>
   );

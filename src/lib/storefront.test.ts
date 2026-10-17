@@ -1,8 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+const mockUnstableCache = vi.hoisted(() => vi.fn());
 vi.mock("server-only", () => ({}));
+vi.mock("next/cache", () => ({ unstable_cache: (...args: unknown[]) => mockUnstableCache(...args) }));
 
 import {
+  applyShopifyCartLineTargets,
   addShopifyCartLines,
   createShopifyCart,
   getStorefrontMode,
@@ -72,6 +75,7 @@ const publishedShopifyProduct = {
 
 describe("Shopify cart response mapping", () => {
   beforeEach(() => {
+    mockUnstableCache.mockImplementation((callback) => callback);
     vi.stubEnv("SHOPIFY_STOREFRONT_PUBLIC_TOKEN", "test-storefront-token");
     vi.stubEnv("SHOPIFY_STOREFRONT_PRIVATE_TOKEN", "");
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: { cart: shopifyCart } }), { status: 200 })));
@@ -101,6 +105,36 @@ describe("Shopify cart response mapping", () => {
     expect(new Headers(request.headers).get("x-shopify-storefront-access-token")).toBe("test-storefront-token");
     expect(new Headers(request.headers).get("shopify-storefront-access-token")).toBeNull();
     expect(product).toMatchObject({ handle: "pudina", preview: false, availableForSale: true });
+    expect(mockUnstableCache).toHaveBeenCalledWith(
+      expect.any(Function),
+      expect.arrayContaining(["project-beej-public-storefront", "projectbeej-1686bmnd.myshopify.com", "2026-10", "live"]),
+      { revalidate: 60 },
+    );
+  });
+
+  it("validates catalog products inside the cached function so malformed data cannot become a cached success", async () => {
+    vi.stubEnv("SHOPIFY_MODE", "live");
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ data: { products: { nodes: [{ id: "incomplete-product" }] } } }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(getCardProducts()).rejects.toThrow("Shopify returned incomplete product data.");
+    const cachedLoader = mockUnstableCache.mock.calls.at(-1)?.[0] as (() => Promise<unknown>) | undefined;
+    await expect(cachedLoader?.()).rejects.toThrow("Shopify returned incomplete product data.");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps a failed Shopify catalog read distinct from a successful empty catalog", async () => {
+    vi.stubEnv("SHOPIFY_MODE", "live");
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ errors: [{ message: "Temporary Shopify outage." }] }), { status: 200 })));
+
+    await expect(getCardProducts()).rejects.toThrow("Temporary Shopify outage.");
+  });
+
+  it("treats a genuinely missing collection as an empty collection", async () => {
+    vi.stubEnv("SHOPIFY_MODE", "live");
+    respondWith({ collection: null });
+
+    await expect(getCardCollectionProducts("not-a-collection")).resolves.toEqual([]);
   });
 
   it("does not request inventory counts from Shopify product or cart queries", async () => {
@@ -200,6 +234,34 @@ describe("Shopify cart response mapping", () => {
     const result = await removeShopifyCartLines(shopifyCart.id, [cartLine.id]);
 
     expect(result.cartLinesRemove.cart?.lines).toEqual([cartLine]);
+  });
+
+  it("groups absolute line updates, removals, and additions into one Shopify request", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: {
+      updated: { cart: shopifyCart, userErrors: [], warnings: [] },
+      removed: { cart: shopifyCart, userErrors: [], warnings: [{ message: "A line was removed." }] },
+      added: { cart: shopifyCart, userErrors: [], warnings: [] },
+    } }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await applyShopifyCartLineTargets(shopifyCart.id, {
+      updates: [{ id: "line-1", quantity: 3 }],
+      removals: ["line-2"],
+      additions: [{ merchandiseId: "gid://shopify/ProductVariant/new", quantity: 1 }],
+    });
+    const request = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)) as { query: string; variables: Record<string, unknown> };
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(request.query).toContain("updated: cartLinesUpdate");
+    expect(request.query).toContain("removed: cartLinesRemove");
+    expect(request.query).toContain("added: cartLinesAdd");
+    expect(request.variables).toEqual({
+      cartId: shopifyCart.id,
+      updates: [{ id: "line-1", quantity: 3 }],
+      lineIds: ["line-2"],
+      additions: [{ merchandiseId: "gid://shopify/ProductVariant/new", quantity: 1 }],
+    });
+    expect(result).toMatchObject({ cart: { lines: [cartLine] }, userErrors: [], warnings: [{ message: "A line was removed." }] });
   });
 
   it("marks published Shopify products as preview-only while storefront preview mode is active", async () => {

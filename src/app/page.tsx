@@ -8,7 +8,6 @@ import { ProductGrid } from "@/components/ProductGrid";
 import { SproutVideo } from "@/components/SproutVideo";
 import { getCardProducts, getRequestCachedSiteSettings } from "@/lib/storefront";
 import type { BeejProduct } from "@/lib/types";
-import { requestBuyerIp } from "@/lib/request-ip";
 import { getPublicSiteUrl } from "@/lib/site-url";
 import { escapeJsonLd } from "@/lib/product-feeds";
 
@@ -44,10 +43,9 @@ async function homeData(): Promise<{
   featuredProducts: BeejProduct[];
   settings: Awaited<ReturnType<typeof getRequestCachedSiteSettings>>;
 }> {
-  const buyerIp = await requestBuyerIp();
   const [settings, productResult] = await Promise.all([
-    getRequestCachedSiteSettings(buyerIp),
-    getCardProducts(buyerIp).catch(() => []),
+    getRequestCachedSiteSettings(),
+    getCardProducts(),
   ]);
   const featuredHandles = settings.featuredHandles;
   const products = featuredHandles?.length
@@ -112,7 +110,7 @@ export default async function HomePage() {
         </div>
         <div className="squad-grid">
           {squad.map((member) => (
-            <article className="squad-card" data-squad-tone={member.tone} key={member.name}>
+            <Link className="squad-card" data-squad-tone={member.tone} href={`/products/${member.handle}`} aria-label={`Shop ${member.flavour}`} key={member.name}>
               <div className="squad-card-art">
                 <Image src={`/assets/${member.image}`} alt={`${member.name} mascot`} className="squad-card-mascot" fill sizes="(max-width: 360px) 88vw, (max-width: 560px) 50vw, (max-width: 1100px) 44vw, 24vw" />
               </div>
@@ -120,9 +118,9 @@ export default async function HomePage() {
                 <span>{member.name}</span>
                 <h3>{member.flavour}</h3>
                 <p>{member.tagline}</p>
-                <Link className="squad-card-link" href={`/products/${member.handle}`} aria-label={`Shop ${member.flavour}`}>Shop now</Link>
+                <span className="squad-card-link">Shop now</span>
               </div>
-            </article>
+            </Link>
           ))}
         </div>
       </section>
