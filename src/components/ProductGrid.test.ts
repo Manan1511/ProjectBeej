@@ -27,9 +27,11 @@ const product: BeejProduct = {
 
 describe("homepage product presentation", () => {
   it("uses the reference image-led card treatment without the mascot overlay", () => {
-    const markup = renderToStaticMarkup(createElement(ProductGrid, { products: [product], listName: "Home featured" }));
+    const featuredProduct = { ...product, images: [product.images[0], { url: "/assets/home-hover.jpg", alt: "Alternate Peri Peri scene" }] };
+    const markup = renderToStaticMarkup(createElement(ProductGrid, { products: [featuredProduct], listName: "Home featured" }));
 
     expect(markup).toContain("home-product-card");
+    expect(markup).toContain('data-hover-image-src="/assets/home-hover.jpg"');
     expect(markup).toContain("Bestseller");
     expect(markup).toContain("Roasted Makhana");
     expect(markup).toContain("₹299");

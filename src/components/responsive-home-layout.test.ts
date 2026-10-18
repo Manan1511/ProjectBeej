@@ -23,6 +23,12 @@ describe("responsive home layout", () => {
     expect(toneRules.every((rule) => /--squad-mascot-scale:\s*(?:0)?\.\d+/.test(rule))).toBe(true);
   });
 
+  it("fades homepage product cards to their alternate image on hover", () => {
+    expect(globalStyles).toMatch(/\.artifact-featured \.product-card-image \.product-hover-photo\s*\{[^}]*opacity:\s*0/);
+    expect(globalStyles).toMatch(/\.artifact-featured \.product-card-image:hover \.product-hover-photo\s*\{[^}]*opacity:\s*1/);
+    expect(globalStyles).toMatch(/\.artifact-featured \.product-card-image:hover \.product-photo\s*\{[^}]*opacity:\s*0/);
+  });
+
   it("keeps the mobile navigation in a symmetric three-column layout", () => {
     const navRules = [...globalStyles.matchAll(/\.nav-wrap\s*\{([^}]*)\}/g)].map((match) => match[1]);
     const logoRules = [...globalStyles.matchAll(/\.brand-mark\s*\{([^}]*)\}/g)].map((match) => match[1]);

@@ -48,7 +48,7 @@ function ProductCard({ product, listName, index, cartSnapshot, shopPresentation 
   const isHomeFeatured = listName === "Home featured";
   const isEditorialCard = isHomeFeatured || shopPresentation;
   const homeBadge = isEditorialCard ? homeBadges[product.handle] : undefined;
-  const hoverImage = shopPresentation
+  const hoverImage = isHomeFeatured || shopPresentation
     ? product.images[1] || (shopHoverImageFallbacks[product.handle] ? { url: shopHoverImageFallbacks[product.handle], alt: "" } : undefined)
     : undefined;
   function changeCartQuantity(delta: number) {
