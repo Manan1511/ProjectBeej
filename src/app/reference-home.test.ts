@@ -108,13 +108,13 @@ describe("homepage matches the approved artifact", () => {
       "artifact-story",
       "artifact-values",
       "artifact-community",
-      "artifact-newsletter",
     ];
     const positions = expected.map((className) => classes.findIndex((value) => value.split(/\s+/).includes(className)));
 
     expect(positions.every((position) => position >= 0)).toBe(true);
     expect(positions).toEqual([...positions].sort((a, b) => a - b));
     expect(classes.some((value) => value.split(/\s+/).includes("artifact-categories"))).toBe(false);
+    expect(classes.some((value) => value.split(/\s+/).includes("newsletter-section"))).toBe(false);
   });
 
   it("does not add unsupported nutrition, allergen, tax, or origin claims", async () => {

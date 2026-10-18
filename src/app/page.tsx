@@ -3,7 +3,6 @@ import Image from "next/image";
 import type { Metadata } from "next";
 import { BannerSlider } from "@/components/BannerSlider";
 import { HeroStripes } from "@/components/HeroStripes";
-import { NewsletterForm } from "@/components/NewsletterForm";
 import { ProductGrid } from "@/components/ProductGrid";
 import { SproutVideo } from "@/components/SproutVideo";
 import { getCardProducts, getRequestCachedSiteSettings } from "@/lib/storefront";
@@ -159,14 +158,6 @@ export default async function HomePage() {
         <div className="community-grid">{gallery.map((image) => <div key={image.src}><Image src={image.src} alt={image.alt} fill sizes="(max-width: 760px) 50vw, 25vw" /></div>)}</div>
       </section>
 
-      <section className="newsletter-section artifact-newsletter" aria-labelledby="newsletter-title">
-        <div className="newsletter-copy">
-          <span className="eyebrow">A little good news</span>
-          <h2 id="newsletter-title">Be first to the <span>next drop.</span></h2>
-          <p>{settings.homeCopy?.newsletterDescription || "New flavours, new snacks, and the occasional mascot cameo. No spam."}</p>
-        </div>
-        <NewsletterForm />
-      </section>
     </main>
   );
 }
