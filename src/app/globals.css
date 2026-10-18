@@ -456,7 +456,7 @@ a { transition: color .18s ease; }
 @media (max-width: 760px) {
   .preview-notice { padding: 7px 14px; font-size: 10px; line-height: 1.35; }
   .announcement { min-height: 35px; padding: 8px 14px; font-size: 11px; }
-  .nav-wrap { position: relative; min-height: 69px; grid-template-columns: 1fr auto 1fr; padding: 3px 18px; }
+  .nav-wrap { position: relative; min-height: 69px; grid-template-columns: minmax(42px, 1fr) minmax(90px, 125px) minmax(42px, 1fr); gap: 8px; padding: 3px max(12px, env(safe-area-inset-left)) 3px max(12px, env(safe-area-inset-right)); }
   .nav-links { display: none; }
   .nav-right { display: flex; grid-column: 1; grid-row: 1; justify-content: flex-start; }
   .brand-mark { width: 125px; height: 64px; grid-column: 2; }
@@ -801,6 +801,7 @@ a { transition: color .18s ease; }
 .artifact-home-copy .button { min-height: 50px; padding-inline: 26px; letter-spacing: .035em; }
 .artifact-hero-art { min-width: 0; padding: 22px 4px; }
 .hero-portraits { position: relative; width: min(100%, 590px); height: auto; aspect-ratio: 1.18 / 1; margin: 0 auto; }
+.hero-image-preloader { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; pointer-events: none; }
 .artifact-hero-art .hero-frame {
   display: block;
   position: absolute;
@@ -828,11 +829,11 @@ a { transition: color .18s ease; }
 .artifact-hero-art .mascot-badge { z-index: 3; width: clamp(76px, 9vw, 112px); border-width: 5px; }
 .artifact-hero-art .mascot-top { top: 3%; left: -2%; transform: rotate(-7deg); }
 .artifact-benefits { min-height: 60px; background: var(--sage); color: var(--olive-deep); font-family: var(--font-dm-serif-display), Georgia, serif; font-size: 20px; letter-spacing: .015em; text-transform: none; }
-.artifact-benefit-track { align-items: center; margin-left: calc(50vw - clamp(125px, 11vw, 155px)); animation: benefit-ribbon-drift 48s linear infinite; }
+.artifact-benefit-track { align-items: center; margin-left: calc(50vw - clamp(142.5px, 12.5vw, 160px)); animation: benefit-ribbon-drift 48s linear infinite; }
 .artifact-benefits .benefit-ribbon-group { min-height: 60px; gap: 0; padding-inline: 0; }
-.artifact-benefit-item { position: relative; display: grid; flex: 0 0 clamp(250px, 22vw, 310px); place-items: center; }
+.artifact-benefit-item { position: relative; display: flex; flex: 0 0 clamp(285px, 25vw, 320px); align-items: center; justify-content: center; gap: clamp(28px, 3vw, 40px); }
 .artifact-benefit-item > span { white-space: nowrap; }
-.artifact-benefit-item i { position: absolute; top: 50%; right: -3px; transform: translateY(-50%); }
+.artifact-benefit-item i { position: static; flex: 0 0 6px; transform: none; }
 .artifact-benefits .benefit-ribbon-group i { width: 6px; height: 6px; background: var(--olive-deep); }
 .artifact-benefits:focus-within .artifact-benefit-track, .artifact-benefits:hover .artifact-benefit-track { animation-play-state: paused; }
 .artifact-home .section-heading h2, .artifact-home .story-copy h2, .artifact-home .pillars-section > h2, .artifact-home .newsletter-copy h2 { font-family: var(--font-dm-serif-display), Georgia, serif; font-weight: 400; line-height: 1; text-transform: none; letter-spacing: -.025em; }
@@ -849,8 +850,8 @@ a { transition: color .18s ease; }
 .artifact-team .squad-card[data-squad-tone="cheese"] { --squad-panel: #fbe6b2; }
 .artifact-team .squad-card[data-squad-tone="salt-pepper"] { --squad-panel: #f6d2d6; }
 .artifact-team .squad-card[data-squad-tone="pudina"] { --squad-panel: #d4e9c9; }
-.artifact-team .squad-card-art { position: absolute; z-index: 1; top: clamp(-40px, -2.4vw, -26px); left: 50%; width: 105%; height: clamp(250px, 19vw, 300px); overflow: visible; background: transparent; aspect-ratio: auto; transform: translateX(-50%); }
-.artifact-team .squad-card-art .squad-card-mascot { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; padding: 0; object-fit: contain; object-position: center bottom; transition: transform .35s var(--ease-beej); }
+.artifact-team .squad-card-art { position: absolute; z-index: 1; top: clamp(-40px, -2.4vw, -26px); left: 50%; width: 100%; height: clamp(250px, 19vw, 300px); overflow: visible; background: transparent; aspect-ratio: auto; transform: translateX(-50%); }
+.artifact-team .squad-card-art .squad-card-mascot { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; padding: 0; object-fit: contain; object-position: center bottom; transform: scale(var(--squad-mascot-scale, 1)); transform-origin: center bottom; transition: transform .35s var(--ease-beej); }
 .artifact-team .squad-card-copy { position: relative; z-index: 2; display: flex; width: 100%; min-height: 465px; flex-direction: column; align-items: flex-start; overflow: visible; aspect-ratio: auto; background: transparent; padding: clamp(248px, 18vw, 276px) clamp(18px, 2vw, 28px) 27px; }
 .artifact-team .squad-card-copy > span { display: block; margin: 0 0 10px; color: var(--sage-dark); font-size: 11px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
 .artifact-team .squad-card-copy h3 { margin: 0 0 9px; color: var(--olive-deep); font-family: var(--font-dm-serif-display), Georgia, serif; font-size: clamp(23px, 2.2vw, 30px); font-weight: 400; line-height: 1.08; text-transform: none; text-wrap: balance; }
@@ -859,7 +860,7 @@ a { transition: color .18s ease; }
 .artifact-team .squad-card:hover .squad-card-link, .artifact-team .squad-card:focus-visible .squad-card-link { color: var(--sage-dark); text-underline-offset: 8px; }
 @media (hover: hover) and (pointer: fine) {
   .artifact-team .squad-card:hover, .artifact-team .squad-card:focus-visible { transform: translateY(-5px); box-shadow: 0 16px 28px rgb(43 50 32 / 12%); }
-  .artifact-team .squad-card:hover .squad-card-mascot, .artifact-team .squad-card:focus-within .squad-card-mascot { transform: translateY(-5px) rotate(-1deg) scale(1.025); }
+  .artifact-team .squad-card:hover .squad-card-mascot, .artifact-team .squad-card:focus-within .squad-card-mascot { transform: translateY(-5px) rotate(-1deg) scale(var(--squad-mascot-scale, 1)); }
 }
 .artifact-featured { padding-top: clamp(35px, 5vw, 66px); }
 .artifact-featured .section-heading h2 { font-size: clamp(56px, 7vw, 92px); }
@@ -964,6 +965,9 @@ a { transition: color .18s ease; }
   .artifact-newsletter { padding: 54px 22px; }
 }
 @media (max-width: 430px) {
+  .artifact-team .squad-card[data-squad-tone="cheese"] .squad-card-mascot { --squad-mascot-scale: .72; }
+  .artifact-team .squad-card[data-squad-tone="salt-pepper"] .squad-card-mascot { --squad-mascot-scale: .78; }
+  .artifact-team .squad-card[data-squad-tone="pudina"] .squad-card-mascot { --squad-mascot-scale: .9; }
   .artifact-home-inner { padding: 38px 16px 69px; }
   .artifact-home-copy { width: min(100%, calc(100vw - 32px)); }
   .artifact-home-copy h1 { width: min(100%, calc(100vw - 32px)); max-width: 100%; font-size: clamp(36px, 10vw, 40px); letter-spacing: -.04em; }
@@ -1010,12 +1014,22 @@ a { transition: color .18s ease; }
 .artifact-shop .catalog-intro { margin-bottom: 28px; }
 .artifact-shop .catalog-intro h2 { margin: 8px 0 0; font-family: var(--font-dm-serif-display), Georgia, serif; font-size: clamp(42px, 5.4vw, 70px); font-weight: 400; line-height: 1; letter-spacing: -.025em; text-transform: none; }
 .artifact-shop .catalog-intro > p { max-width: 420px; font-size: 15px; }
-.artifact-shop-controls { gap: 15px; margin-bottom: 24px; padding-bottom: 17px; }
+.artifact-shop-controls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 13px; margin-bottom: 24px; padding-bottom: 17px; }
 .artifact-shop-controls .filter-pills { gap: 8px; }
 .artifact-shop-controls .filter-pill { min-height: 42px; padding: 9px 15px; font-size: 13px; white-space: nowrap; }
-.artifact-shop-controls .catalog-controls-trailing { flex-wrap: wrap; gap: 15px; max-width: 100%; }
-.artifact-shop-controls .catalog-controls-search { min-width: min(200px, 100%); flex: 1 1 200px; }
-.artifact-shop .search-form.search-form-compact { position: relative; width: clamp(190px, 20vw, 260px); max-width: none; margin: 0; }
+.artifact-shop-controls .catalog-controls-search { width: min(440px, 100%); }
+.artifact-shop-search-row { display: flex; width: min(520px, 100%); align-items: center; gap: 9px; }
+.artifact-shop-search-row .catalog-controls-search { min-width: 0; flex: 1 1 auto; width: auto; }
+.shop-filter-control { position: relative; flex: 0 0 auto; }
+.shop-filter-control > summary { display: grid; width: 42px; height: 42px; place-items: center; list-style: none; border: 1px solid rgb(43 50 32 / 25%); border-radius: 12px; background: #fffdf7; color: var(--olive-deep); cursor: pointer; transition: color .18s ease, background-color .18s ease, border-color .18s ease; }
+.shop-filter-control > summary::-webkit-details-marker { display: none; }
+.shop-filter-control > summary:hover, .shop-filter-control[open] > summary { border-color: var(--sage-dark); background: var(--sage); }
+.shop-filter-control > summary:focus-visible { outline: 3px solid #d79b34; outline-offset: 3px; }
+.shop-filter-icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.shop-filter-menu { position: absolute; z-index: 20; top: calc(100% + 8px); right: 0; display: grid; width: min(240px, calc(100vw - 32px)); gap: 4px; padding: 7px; border: 1px solid var(--line); border-radius: 14px; background: #fffdf7; box-shadow: 0 14px 32px rgb(43 50 32 / 18%); }
+.shop-filter-menu button { min-height: 40px; padding: 9px 11px; border: 0; border-radius: 9px; background: transparent; color: var(--olive-deep); cursor: pointer; font-size: 13px; font-weight: 650; text-align: left; }
+.shop-filter-menu button:hover, .shop-filter-menu button.selected { background: var(--sage); }
+.artifact-shop .search-form.search-form-compact { position: relative; width: 100%; max-width: none; margin: 0; }
 .artifact-shop .search-form-compact input { width: 100%; min-height: 42px; padding: 9px 45px 9px 15px; border: 1px solid rgb(43 50 32 / 25%); background: #fffdf7; font-size: 13px; transition: border-color .2s ease, box-shadow .2s ease; }
 .artifact-shop .search-form-compact input:focus { border-color: var(--sage-dark); outline: none; box-shadow: 0 0 0 3px rgb(110 125 78 / 14%); }
 .artifact-shop .search-form-compact input::-webkit-search-cancel-button { cursor: pointer; }
@@ -1047,8 +1061,6 @@ a { transition: color .18s ease; }
 @keyframes storefront-skeleton { from { opacity: .5; } to { opacity: 1; } }
 @media (max-width: 760px) { .shop-loading-grid, .related-skeleton { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; } .shop-loading-toolbar span { width: 29%; } }
 @media (prefers-reduced-motion: reduce) { .shop-loading-toolbar span, .shop-loading-card > span:not(.shop-loading-image), .shop-loading-image, .product-loading-image, .product-loading-line, .product-loading-title, .product-loading-copy, .product-loading-button, .related-skeleton span { animation: none; } }
-.artifact-shop-controls .sort-control { gap: 10px; font-size: 14px; }
-.artifact-shop-controls .sort-control select { min-width: 170px; min-height: 42px; padding: 8px 32px 8px 16px; background-color: transparent; font-size: 14px; }
 .artifact-shop-grid { gap: clamp(16px, 1.8vw, 24px); }
 .artifact-shop-grid .shop-product-card { overflow: visible; border-radius: 0; background: transparent; box-shadow: none; transition: none; }
 .artifact-shop-grid .shop-product-card:hover, .artifact-shop-grid .shop-product-card:focus-within { transform: none; box-shadow: none; }
@@ -1131,15 +1143,12 @@ a { transition: color .18s ease; }
 @keyframes artifact-photo-drift { from { transform: scale(1.01); } to { transform: scale(1.065); } }
 
 @media (max-width: 1050px) {
-  .artifact-shop-controls { display: grid; grid-template-columns: minmax(0, 1fr); }
-  .artifact-shop-controls .catalog-controls-trailing { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin-left: 0; }
-  .artifact-shop-controls .catalog-controls-search { min-width: 0; }
-  .artifact-shop .search-form.search-form-compact { width: 100%; }
-  .artifact-shop-controls .sort-control { width: 100%; justify-content: space-between; }
-  .artifact-shop-controls .sort-control select { width: min(100%, 210px); min-width: 0; }
+  .artifact-shop-search-row { width: min(520px, 100%); }
 }
 
 @media (max-width: 760px) {
+  .nav-wrap { grid-template-columns: minmax(42px, 1fr) minmax(90px, 125px) minmax(42px, 1fr); gap: 8px; padding: 3px max(12px, env(safe-area-inset-left)) 3px max(12px, env(safe-area-inset-right)); }
+  .brand-mark { width: min(125px, 100%); height: 64px; }
   .artifact-footer .footer-main { grid-template-columns: 1fr 1fr; gap: 24px 18px; }
   .shop-spotted-section { padding-top: 48px; }
   .shop-spotted-heading { align-items: flex-start; flex-direction: column; gap: 9px; margin-bottom: 19px; }
@@ -1165,13 +1174,10 @@ a { transition: color .18s ease; }
   .artifact-shop-controls .filter-pills { width: 100%; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
   .artifact-shop-controls .filter-pills::-webkit-scrollbar { display: none; }
   .artifact-shop-controls .filter-pill { min-height: 37px; padding: 7px 12px; font-size: 11px; }
-  .artifact-shop-controls .catalog-controls-trailing { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
-  .artifact-shop-controls .catalog-controls-search { min-width: 0; }
+  .artifact-shop-search-row { width: 100%; }
   .artifact-shop .search-form.search-form-compact { width: 100%; }
   .artifact-shop .search-form-compact input { min-height: 40px; font-size: 12px; }
   .artifact-shop .search-form-compact .search-icon-button { top: 3px; right: 3px; width: 34px; height: 34px; }
-  .artifact-shop-controls .sort-control { width: 100%; justify-content: space-between; gap: 10px; font-size: 11px; }
-  .artifact-shop-controls .sort-control select { width: min(100%, 210px); min-width: 0; min-height: 40px; padding: 7px 23px 7px 11px; font-size: 11px; }
   .artifact-shop-grid { column-gap: 12px; row-gap: 28px; }
   .artifact-shop-grid .product-card-image { border-radius: 18px; }
   .artifact-shop-grid .home-product-badge { top: 9px; left: 9px; padding: 6px 9px; font-size: 9px; }

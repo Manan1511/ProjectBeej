@@ -40,7 +40,18 @@ describe("hero portraits", () => {
     const markup = renderToStaticMarkup(createElement(BannerSlider));
 
     expect(markup.match(/class="hero-frame /g)).toHaveLength(2);
+    expect(markup).toContain('class="hero-image-preloader"');
+    expect(markup).toContain("peri-flatlay.jpg");
+    expect(markup).toMatch(/class="hero-image-preloader"[^>]*style="[^"]*position:absolute[^"]*left:-9999px/);
     expect(markup).not.toContain("mascot-badge");
+  });
+
+  it("uses matching responsive source sizes for both portraits and the next image", () => {
+    const markup = renderToStaticMarkup(createElement(BannerSlider));
+    const sizes = [...markup.matchAll(/sizes="([^"]+)"/g)].map((match) => match[1]);
+
+    expect(sizes.filter((size) => size === "(max-width: 760px) 45vw, 23vw")).toHaveLength(3);
+    expect(markup).toContain("peri-flatlay.jpg");
   });
 
   it("links both visible product portraits to their own distinct product pages", () => {
@@ -69,7 +80,7 @@ describe("hero portraits", () => {
     expect(markup.match(/class="hero-frame /g)).toHaveLength(1);
   });
 
-  it("advances through different adjacent product pairs without duplicates", () => {
+  it("advances through unique adjacent hero pairs", () => {
     const getHeroProductPair = rotationApi.getHeroProductPair;
     expect(getHeroProductPair).toBeTypeOf("function");
     if (!getHeroProductPair) return;

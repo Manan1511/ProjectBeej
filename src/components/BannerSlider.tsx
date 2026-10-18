@@ -68,9 +68,15 @@ function createHeroSlides(products: HeroProduct[] = []): HeroSlide[] {
 
 export function BannerSlider({ products = [] }: { products?: HeroProduct[] }) {
   const artRef = useRef<HTMLDivElement>(null);
+  const isHoveredRef = useRef(false);
+  const isFocusedRef = useRef(false);
   const [rotationIndex, setRotationIndex] = useState(0);
+  const [preloadedHandles, setPreloadedHandles] = useState<Set<string>>(() => new Set());
   const slides = useMemo(() => createHeroSlides(products), [products]);
   const visibleSlides = getHeroProductPair(slides, rotationIndex);
+  const upcomingSlides = getHeroProductPair(slides, rotationIndex + 1);
+  const nextImages = upcomingSlides.filter((slide) => !visibleSlides.some((visible) => visible.handle === slide.handle));
+  const nextImagesReady = nextImages.every((slide) => preloadedHandles.has(slide.handle));
 
   useEffect(() => {
     emitCommerceEvent({ name: "view_promotion", promotion_id: "hero-1", promotion_name: "Hero banner 1", items: [] });
@@ -82,15 +88,13 @@ export function BannerSlider({ products = [] }: { products?: HeroProduct[] }) {
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     let isVisible = typeof IntersectionObserver === "undefined";
-    let isHovered = false;
-    let isFocused = false;
     let stopRotation: (() => void) | null = null;
 
     const synchronize = () => {
       const canAnimate = isVisible && !document.hidden && !reducedMotion.matches;
       art.classList.toggle("motion-active", canAnimate);
 
-      const shouldRotate = canAnimate && !isHovered && !isFocused;
+      const shouldRotate = canAnimate && !isHoveredRef.current && !isFocusedRef.current && nextImagesReady;
       if (shouldRotate && !stopRotation) {
         stopRotation = startHeroRotation(() => {
           setRotationIndex((index) => (index + 1) % slides.length);
@@ -113,21 +117,21 @@ export function BannerSlider({ products = [] }: { products?: HeroProduct[] }) {
     const onMotionPreferenceChange = () => synchronize();
     const onPointerEnter = (event: PointerEvent) => {
       if (event.pointerType === "touch") return;
-      isHovered = true;
+      isHoveredRef.current = true;
       synchronize();
     };
     const onPointerLeave = (event: PointerEvent) => {
       if (event.pointerType === "touch") return;
-      isHovered = false;
+      isHoveredRef.current = false;
       synchronize();
     };
     const onFocusIn = () => {
-      isFocused = true;
+      isFocusedRef.current = true;
       synchronize();
     };
     const onFocusOut = (event: FocusEvent) => {
       if (event.relatedTarget instanceof Node && art.contains(event.relatedTarget)) return;
-      isFocused = false;
+      isFocusedRef.current = false;
       synchronize();
     };
 
@@ -150,7 +154,7 @@ export function BannerSlider({ products = [] }: { products?: HeroProduct[] }) {
       stopRotation?.();
       art.classList.remove("motion-active");
     };
-  }, [slides.length]);
+  }, [nextImagesReady, rotationIndex, slides.length]);
 
   return (
     <div className="hero-art artifact-hero-art" ref={artRef} role="group" aria-label="Featured Project Beej snacks">
@@ -162,10 +166,27 @@ export function BannerSlider({ products = [] }: { products?: HeroProduct[] }) {
             href={`/products/${slide.handle}`}
             aria-label={`View ${slide.title}`}
           >
-            <Image key={slide.handle} src={slide.src} alt={slide.alt} fill sizes={index === 0 ? "(max-width: 760px) 54vw, 30vw" : "(max-width: 760px) 42vw, 23vw"} preload={rotationIndex === 0 && index === 0} />
+            <Image key={slide.handle} src={slide.src} alt={slide.alt} fill sizes="(max-width: 760px) 45vw, 23vw" preload={rotationIndex === 0 && index === 0} loading="eager" />
           </Link>
         ))}
       </div>
+      {nextImages.map((slide) => (
+        <div
+          className="hero-image-preloader"
+          aria-hidden="true"
+          key={slide.handle}
+          style={{ position: "absolute", left: -9999, width: 1, height: 1, overflow: "hidden" }}
+        >
+          <Image
+            src={slide.src}
+            alt=""
+            fill
+            sizes="(max-width: 760px) 45vw, 23vw"
+            loading="eager"
+            onLoad={() => setPreloadedHandles((handles) => new Set(handles).add(slide.handle))}
+          />
+        </div>
+      ))}
     </div>
   );
 }

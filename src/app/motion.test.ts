@@ -57,9 +57,9 @@ describe("storefront motion", () => {
   });
 
   it("centers each marquee phrase in a fixed-width cell without adding a loop seam", () => {
-    expect(styles).toMatch(/\.artifact-benefit-item\s*\{[^}]*display:\s*grid[^}]*flex:\s*0 0 clamp\(250px,\s*22vw,\s*310px\)[^}]*place-items:\s*center/);
-    expect(styles).toMatch(/\.artifact-benefit-track\s*\{[^}]*margin-left:\s*calc\(50vw - clamp\(125px,\s*11vw,\s*155px\)\)/);
-    expect(styles).toMatch(/\.artifact-benefit-item i\s*\{[^}]*position:\s*absolute[^}]*right:\s*-3px/);
+    expect(styles).toMatch(/\.artifact-benefit-item\s*\{[^}]*display:\s*flex[^}]*flex:\s*0 0 clamp\(285px,\s*25vw,\s*320px\)[^}]*gap:\s*clamp\(28px,\s*3vw,\s*40px\)/);
+    expect(styles).toMatch(/\.artifact-benefit-track\s*\{[^}]*margin-left:\s*calc\(50vw - clamp\(142\.5px,\s*12\.5vw,\s*160px\)\)/);
+    expect(styles).toMatch(/\.artifact-benefit-item i\s*\{[^}]*position:\s*static[^}]*flex:\s*0 0 6px/);
     expect(styles).toMatch(/\.artifact-benefits \.benefit-ribbon-group\s*\{[^}]*gap:\s*0[^}]*padding-inline:\s*0/);
   });
 

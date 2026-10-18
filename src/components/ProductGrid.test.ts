@@ -58,13 +58,20 @@ describe("homepage product presentation", () => {
       filters: true,
       listName: "Shop all",
       presentation: "shop",
+      toolbar: createElement("input", { id: "shop-search", type: "search" }),
     }));
 
     expect(markup).toContain("artifact-shop-grid");
     expect(markup).toContain("All 1");
     expect(markup).toContain("Roasted Makhana 1");
     expect(markup).toContain("Ready to Roast 0");
-    expect(markup).toContain("Sort");
+    expect(markup.indexOf('id="shop-search"')).toBeLessThan(markup.indexOf('aria-label="Filter products by category"'));
+    expect(markup).toContain('class="shop-filter-control"');
+    expect(markup).toContain('aria-label="Open category filters"');
+    expect(markup).toContain('aria-controls="shop-category-filter-menu"');
+    expect(markup).toContain('id="shop-category-filter-menu"');
+    expect(markup).toContain('aria-label="Roasted Makhana 1"');
+    expect(markup).not.toContain("Sort");
     expect(markup).not.toContain("product-hover-photo");
     expect(markup).toContain('data-hover-image-src="/assets/peri-flatlay.jpg"');
     expect(markup).toContain("Bestseller");

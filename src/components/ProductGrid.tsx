@@ -24,6 +24,10 @@ const homeBadges: Record<string, string> = {
   pudina: "New",
 };
 
+const productUnits: Record<string, string> = {
+  "classic-makhana": "70g pouch",
+};
+
 const shopHoverImageFallbacks: Record<string, string> = {
   "peri-peri": "/assets/peri-flatlay.jpg",
   cheese: "/assets/cheese-table.jpg",
@@ -76,7 +80,7 @@ function ProductCard({ product, listName, index, cartSnapshot, shopPresentation 
         <div className="product-card-bottom">
           <div className="home-product-cost">
             <span className="product-price">{formatINR(product.price.amount)}{product.preview && !isEditorialCard ? <small>draft</small> : null}</span>
-            {isEditorialCard ? <span className="product-unit">Jar</span> : null}
+            {isEditorialCard ? <span className="product-unit">{productUnits[product.handle] || "Jar"}</span> : null}
           </div>
           {ready && quantity > 0 ? <div className="quantity-stepper product-card-quantity-stepper" aria-label={`Quantity for ${product.title}`}>
             <button type="button" onClick={() => changeCartQuantity(-1)} aria-label={`Decrease ${product.title} quantity`}>−</button>
@@ -128,6 +132,27 @@ export function ProductGrid({ products, filters = false, listName = "Product lis
     <>
       {filters ? (
         <div className={presentation === "shop" ? "catalog-controls artifact-shop-controls" : "catalog-controls"}>
+          {presentation === "shop" && toolbar ? <div className="artifact-shop-search-row">
+            <div className="catalog-controls-search">{toolbar}</div>
+            <details className="shop-filter-control">
+              <summary aria-label="Open category filters" aria-controls="shop-category-filter-menu">
+                <svg className="shop-filter-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M4 5h16l-6.4 7.2v5.2l-3.2 1.8v-7L4 5Z" />
+                </svg>
+              </summary>
+              <div className="shop-filter-menu" id="shop-category-filter-menu" role="group" aria-label="Quick category filters">
+                {filterOptions.map(({ value, label }) => (
+                  <button className={category === value ? "selected" : ""} type="button" key={value} aria-label={label} aria-pressed={category === value} onClick={(event) => {
+                    setCategory(value);
+                    const details = event.currentTarget.closest("details");
+                    if (details) details.open = false;
+                  }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </details>
+          </div> : null}
           <div className="filter-pills" role="group" aria-label="Filter products by category">
             {filterOptions.map(({ value, label }) => (
               <button className={category === value ? "filter-pill selected" : "filter-pill"} type="button" key={value} onClick={() => setCategory(value)} aria-pressed={category === value}>
@@ -135,14 +160,16 @@ export function ProductGrid({ products, filters = false, listName = "Product lis
               </button>
             ))}
           </div>
-          {toolbar ? <div className="catalog-controls-trailing">
-            <div className="catalog-controls-search">{toolbar}</div>
-            <label className="sort-control">Sort <select value={sort} onChange={(event) => setSort(event.target.value)}>
+          {presentation !== "shop" ? <>
+            {toolbar ? <div className="catalog-controls-trailing">
+              <div className="catalog-controls-search">{toolbar}</div>
+              <label className="sort-control">Sort <select value={sort} onChange={(event) => setSort(event.target.value)}>
+                <option value="featured">Featured</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option>
+              </select></label>
+            </div> : <label className="sort-control">Sort by <select value={sort} onChange={(event) => setSort(event.target.value)}>
               <option value="featured">Featured</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option>
-            </select></label>
-          </div> : <label className="sort-control">Sort by <select value={sort} onChange={(event) => setSort(event.target.value)}>
-            <option value="featured">Featured</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option>
-          </select></label>}
+            </select></label>}
+          </> : null}
         </div>
       ) : null}
       {cartSnapshot.message ? <p className="product-grid-status form-message" role="status">{cartSnapshot.message}</p> : null}
