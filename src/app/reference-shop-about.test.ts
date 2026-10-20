@@ -1,5 +1,6 @@
 import { createElement, isValidElement, type ReactElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { readFileSync } from "node:fs";
 import Image from "next/image";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -18,6 +19,8 @@ import { MobileNav } from "@/components/MobileNav";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getCardProducts, getShopifyPage } from "@/lib/storefront";
 import { ShopCatalog, ShopCatalogFallback } from "@/components/ShopCatalog";
+
+const globalStyles = readFileSync(new URL("./globals.css", import.meta.url), "utf8");
 
 function childrenOf(node: ReactNode): ReactNode | undefined {
   if (!isValidElement(node)) return undefined;
@@ -190,7 +193,7 @@ describe("Shop and About match the approved artifact", () => {
     expect(sections.map(({ props }) => props.className)).toEqual([
       "about-hero artifact-about-hero",
       "artifact-about-intro",
-      "artifact-about-seed-banner",
+      "artifact-about-seed-banner artifact-about-content-align",
       "beliefs-section artifact-about-beliefs",
       "artifact-about-cta",
     ]);
@@ -207,5 +210,18 @@ describe("Shop and About match the approved artifact", () => {
     expect(values && collectText(values).join(" ")).toContain("Nature already did the hard work. We keep labels short and honest.");
     expect(text).not.toMatch(/Meet the Beej squad|A story that starts small|Small beginnings can grow into big things/);
     expect(classes.some((value) => value.split(/\s+/).includes("artifact-about-hero"))).toBe(true);
+  });
+
+  it("aligns the Our Story hero, introduction, gallery, and seed banner on one responsive content line", async () => {
+    const page = await AboutPage();
+    const classes = collectClasses(childrenOf(page));
+    const mobileRule = globalStyles.match(/@media \(max-width: 760px\)\s*\{\s*\.artifact-about\s*\{([^}]*)\}/)?.[1] ?? "";
+    const narrowRule = globalStyles.match(/@media \(max-width: 430px\)\s*\{\s*\.artifact-about\s*\{([^}]*)\}/)?.[1] ?? "";
+
+    expect(classes.filter((value) => value.split(/\s+/).includes("artifact-about-content-align"))).toHaveLength(4);
+    expect(globalStyles).toMatch(/\.artifact-about\s*\{[^}]*--artifact-about-content-width:\s*min\(82%,\s*1460px\)/);
+    expect(globalStyles).toMatch(/\.artifact-about-content-align\s*\{[^}]*width:\s*var\(--artifact-about-content-width\)/);
+    expect(mobileRule).toMatch(/--artifact-about-content-width:\s*calc\(100%\s*-\s*48px\)/);
+    expect(narrowRule).toMatch(/--artifact-about-content-width:\s*calc\(100%\s*-\s*40px\)/);
   });
 });

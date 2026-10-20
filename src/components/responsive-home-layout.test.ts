@@ -29,6 +29,16 @@ describe("responsive home layout", () => {
     expect(globalStyles).toMatch(/\.artifact-featured \.product-card-image:hover \.product-photo\s*\{[^}]*opacity:\s*0/);
   });
 
+  it("aligns the homepage hero, team, and featured products to one desktop content frame", () => {
+    const hero = globalStyles.match(/\.artifact-home-inner\s*\{([^}]*)\}/)?.[1] ?? "";
+    const sections = globalStyles.match(/\.artifact-team,\s*\.artifact-featured,\s*\.artifact-community\s*\{([^}]*)\}/)?.[1] ?? "";
+
+    expect(hero).toMatch(/width:\s*min\(100%,\s*1440px\)/);
+    expect(sections).toMatch(/width:\s*min\(100%,\s*1440px\)/);
+    expect(sections).toMatch(/padding:\s*clamp\([^;]+\)\s+clamp\(20px,\s*5vw,\s*64px\)/);
+    expect(globalStyles).not.toMatch(/\.artifact-team\s*\{\s*width:\s*min\(100%,\s*1600px\)/);
+  });
+
   it("keeps the mobile navigation in a symmetric three-column layout", () => {
     const navRules = [...globalStyles.matchAll(/\.nav-wrap\s*\{([^}]*)\}/g)].map((match) => match[1]);
     const logoRules = [...globalStyles.matchAll(/\.brand-mark\s*\{([^}]*)\}/g)].map((match) => match[1]);

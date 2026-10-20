@@ -31,14 +31,14 @@ export default function AboutPage() {
     <section className="about-hero artifact-about-hero" aria-labelledby="about-title">
       <Image className="about-hero-image" src="/assets/seedlings.jpg" alt="Seedlings growing at different stages in rich soil" fill sizes="100vw" preload />
       <div className="about-hero-shade" />
-      <div className="artifact-about-hero-copy">
+      <div className="artifact-about-hero-copy artifact-about-content-align">
         <span className="eyebrow">Our story</span>
         <h1 id="about-title">Rooted in<br />nature. Growing<br /><span>with purpose.</span></h1>
       </div>
     </section>
 
     <section className="artifact-about-intro" aria-labelledby="about-beginnings">
-      <div className="artifact-about-intro-copy">
+      <div className="artifact-about-intro-copy artifact-about-content-align">
         <h2 id="about-beginnings">A seed may be tiny,<br />but it carries the<br /><span>promise of growth.</span></h2>
         <div className="artifact-about-intro-prose">
           <p>“Beej” means seed. Project Beej was born from the belief that the smallest choices shape the biggest transformations, including what you reach for when the 4pm hunger hits.</p>
@@ -46,14 +46,14 @@ export default function AboutPage() {
           <p>Our journey begins with a purpose that goes far beyond the snack bag.</p>
         </div>
       </div>
-      <div className="artifact-about-gallery" aria-label="Project Beej in nature, at home, and at play">
+      <div className="artifact-about-gallery artifact-about-content-align" aria-label="Project Beej in nature, at home, and at play">
         {storyPhotos.map((photo) => <figure key={photo.image}>
           <Image src={`/assets/${photo.image}`} alt={photo.alt} fill sizes="(max-width: 760px) 90vw, (max-width: 1200px) 32vw, 480px" />
         </figure>)}
       </div>
     </section>
 
-    <section className="artifact-about-seed-banner" aria-labelledby="about-seed-title">
+    <section className="artifact-about-seed-banner artifact-about-content-align" aria-labelledby="about-seed-title">
       <Image src="/assets/sprout-single.jpg" alt="A young green sprout rising from rich soil" fill sizes="(max-width: 760px) 100vw, 90vw" />
       <div className="artifact-about-seed-shade" />
       <div className="artifact-about-seed-copy">

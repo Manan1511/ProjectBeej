@@ -792,7 +792,7 @@ a { transition: color .18s ease; }
 .artifact-home-hero { position: relative; overflow: hidden; background: var(--olive-deep); color: var(--cream); }
 .site-header:has(+ main.artifact-home) { margin-bottom: -78px; background: rgb(43 50 32 / 78%); backdrop-filter: blur(12px); box-shadow: 0 5px 18px rgb(24 28 17 / 16%); }
 .artifact-home-hero .hero-stripes { opacity: .55; animation: hero-stripes-rotate 150s linear infinite; }
-.artifact-home-inner { grid-template-columns: minmax(0, 1.02fr) minmax(0, .98fr); min-height: clamp(570px, 48vw, 720px); gap: clamp(20px, 4vw, 58px); padding-top: clamp(48px, 7vw, 94px); padding-bottom: clamp(68px, 8vw, 112px); }
+.artifact-home-inner { width: min(100%, 1440px); grid-template-columns: minmax(0, 1.02fr) minmax(0, .98fr); min-height: clamp(570px, 48vw, 720px); gap: clamp(20px, 4vw, 58px); padding-top: clamp(48px, 7vw, 94px); padding-bottom: clamp(68px, 8vw, 112px); }
 .artifact-home-copy { min-width: 0; width: 100%; gap: clamp(17px, 2vw, 25px); }
 .artifact-home-copy .hero-eyebrow { color: var(--sage); font-size: 12px; letter-spacing: .12em; }
 .artifact-home-copy h1 { width: 100%; max-width: 750px; font-family: var(--font-dm-serif-display), Georgia, serif; font-size: clamp(58px, 5vw, 72px); font-weight: 400; line-height: .92; letter-spacing: -.045em; text-transform: none; text-wrap: balance; }
@@ -839,8 +839,7 @@ a { transition: color .18s ease; }
 .artifact-home .section-heading h2, .artifact-home .story-copy h2, .artifact-home .pillars-section > h2, .artifact-home .newsletter-copy h2 { font-family: var(--font-dm-serif-display), Georgia, serif; font-weight: 400; line-height: 1; text-transform: none; letter-spacing: -.025em; }
 .artifact-home .section-heading h2 { font-size: clamp(42px, 5.2vw, 70px); }
 .artifact-home .section-heading h2 em { color: var(--sage-dark); font-style: italic; }
-.artifact-team, .artifact-featured, .artifact-community { width: min(100%, 1368px); margin-inline: auto; padding: clamp(58px, 7vw, 96px) clamp(20px, 5vw, 64px); }
-.artifact-team { width: min(100%, 1600px); }
+.artifact-team, .artifact-featured, .artifact-community { width: min(100%, 1440px); margin-inline: auto; padding: clamp(58px, 7vw, 96px) clamp(20px, 5vw, 64px); }
 .artifact-team .section-heading, .artifact-featured .section-heading, .artifact-community .section-heading { margin-bottom: clamp(23px, 3vw, 38px); }
 .artifact-team-intro { width: min(34%, 440px); margin: 0 0 7px; color: var(--muted); font-size: clamp(17px, 1.35vw, 21px); line-height: 1.5; text-wrap: pretty; }
 .artifact-team .squad-grid { gap: clamp(12px, 1.5vw, 20px); }
@@ -1229,14 +1228,15 @@ a { transition: color .18s ease; }
 }
 
 /* Our Story follows the seed-to-snack narrative in the approved reference. */
-.artifact-about-hero { min-height: clamp(430px, 23vw, 470px); align-items: center; padding: 20px clamp(24px, 13vw, 250px); }
+.artifact-about { --artifact-about-content-width: min(82%, 1460px); }
+.artifact-about-hero { min-height: clamp(430px, 23vw, 470px); align-items: center; padding: 20px 0; }
 .artifact-about-hero .about-hero-image { object-position: center 54%; animation: none; }
 .artifact-about-hero .about-hero-shade { background: linear-gradient(90deg, rgb(35 42 26 / 46%) 0%, rgb(35 42 26 / 33%) 63%, rgb(35 42 26 / 22%) 100%), linear-gradient(0deg, rgb(35 42 26 / 43%), transparent 54%); }
 .artifact-about-hero-copy { width: min(100%, 1420px); }
 .artifact-about-hero-copy .eyebrow { color: var(--sage); font-size: 15px; }
 .artifact-about-hero-copy h1 { max-width: 1000px; margin: 17px 0 0; color: var(--cream); font-size: clamp(66px, 7.6vw, 112px); line-height: 1; letter-spacing: -.035em; text-transform: none; }
 .artifact-about-hero-copy h1 span { color: var(--cream); }
-.artifact-about-intro { padding: clamp(82px, 8.5vw, 126px) clamp(24px, 9.2vw, 176px) clamp(88px, 9vw, 132px); background: var(--cream); color: var(--olive-deep); }
+.artifact-about-intro { padding: clamp(82px, 8.5vw, 126px) 0 clamp(88px, 9vw, 132px); background: var(--cream); color: var(--olive-deep); }
 .artifact-about-intro-copy { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: clamp(50px, 9vw, 160px); width: min(100%, 1460px); margin: 0 auto; }
 .artifact-about-intro-copy h2 { max-width: 670px; margin: 0; font-family: var(--font-dm-serif-display), Georgia, serif; font-size: clamp(48px, 4.7vw, 66px); font-weight: 400; line-height: .98; letter-spacing: -.035em; }
 .artifact-about-intro-copy h2 span { color: var(--sage-dark); }
@@ -1247,7 +1247,8 @@ a { transition: color .18s ease; }
 .artifact-about-gallery figure:nth-child(2) { margin-top: clamp(28px, 2.7vw, 50px); }
 .artifact-about-gallery img { object-fit: cover; transition: transform .6s var(--ease-beej); }
 .artifact-about-gallery figure:hover img { transform: scale(1.025); }
-.artifact-about-seed-banner { position: relative; width: min(90%, 1550px); aspect-ratio: 2.35; min-height: 460px; overflow: hidden; margin: clamp(26px, 3vw, 48px) auto clamp(80px, 8vw, 124px); border-radius: 34px; background: #10210f; color: var(--cream); }
+.artifact-about-seed-banner { position: relative; width: var(--artifact-about-content-width); aspect-ratio: 2.35; min-height: 460px; overflow: hidden; margin: clamp(26px, 3vw, 48px) auto clamp(80px, 8vw, 124px); border-radius: 34px; background: #10210f; color: var(--cream); }
+.artifact-about-content-align { width: var(--artifact-about-content-width); }
 .artifact-about-seed-banner > img { object-fit: cover; object-position: center 53%; }
 .artifact-about-seed-shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgb(10 23 12 / 73%), rgb(10 23 12 / 28%) 46%, transparent 72%), linear-gradient(0deg, rgb(10 23 12 / 28%), transparent 60%); }
 .artifact-about-seed-copy { position: absolute; left: clamp(32px, 4.2vw, 80px); bottom: clamp(30px, 4vw, 70px); }
@@ -1267,21 +1268,22 @@ a { transition: color .18s ease; }
 .artifact-about-cta .button { min-width: 250px; min-height: 64px; font-size: 15px; }
 
 @media (max-width: 760px) {
-  .artifact-about-hero { min-height: 500px; align-items: flex-end; padding: 54px 24px 50px; }
+  .artifact-about { --artifact-about-content-width: calc(100% - 48px); }
+  .artifact-about-hero { min-height: 500px; align-items: flex-end; padding: 54px 0 50px; }
   .artifact-about-hero .about-hero-image { object-position: 61% center; }
   .artifact-about-hero .about-hero-shade { background: linear-gradient(0deg, rgb(35 42 26 / 82%), rgb(35 42 26 / 34%) 70%, rgb(35 42 26 / 20%)); }
   .artifact-about-hero-copy .eyebrow { font-size: 12px; }
   .artifact-about-hero-copy h1 { max-width: 640px; font-size: clamp(40px, 10vw, 72px); line-height: 1.02; }
-  .artifact-about-intro { padding: 64px 24px 72px; }
+  .artifact-about-intro { padding: 64px 0 72px; }
   .artifact-about-intro-copy { grid-template-columns: 1fr; gap: 26px; }
   .artifact-about-intro-copy h2 { font-size: clamp(42px, 10vw, 60px); }
   .artifact-about-intro-prose { gap: 16px; }
   .artifact-about-intro-prose p { font-size: 16px; line-height: 1.65; }
-  .artifact-about-gallery { grid-auto-columns: minmax(76vw, 82vw); grid-auto-flow: column; grid-template-columns: none; gap: 14px; margin-top: 60px; overflow-x: auto; padding: 0 1px 8px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .artifact-about-gallery { grid-auto-columns: minmax(76vw, 82vw); grid-auto-flow: column; grid-template-columns: none; gap: 14px; margin-top: 60px; overflow-x: auto; padding: 0 0 8px; scroll-snap-type: x mandatory; scrollbar-width: none; }
   .artifact-about-gallery::-webkit-scrollbar { display: none; }
   .artifact-about-gallery figure { aspect-ratio: .82; border-radius: 24px; scroll-snap-align: start; }
   .artifact-about-gallery figure:nth-child(2) { margin-top: 24px; }
-  .artifact-about-seed-banner { width: calc(100% - 32px); min-height: 440px; aspect-ratio: auto; margin: 4px auto 70px; border-radius: 25px; }
+  .artifact-about-seed-banner { width: var(--artifact-about-content-width); min-height: 440px; aspect-ratio: auto; margin: 4px auto 70px; border-radius: 25px; }
   .artifact-about-seed-banner > img { object-position: 57% center; }
   .artifact-about-seed-shade { background: linear-gradient(0deg, rgb(10 23 12 / 75%), rgb(10 23 12 / 18%) 76%); }
   .artifact-about-seed-copy { left: 25px; bottom: 27px; }
@@ -1299,9 +1301,10 @@ a { transition: color .18s ease; }
   .artifact-about-cta .button { min-width: 220px; min-height: 54px; }
 }
 @media (max-width: 430px) {
-  .artifact-about-hero { min-height: 475px; padding: 48px 20px 42px; }
+  .artifact-about { --artifact-about-content-width: calc(100% - 40px); }
+  .artifact-about-hero { min-height: 475px; padding: 48px 0 42px; }
   .artifact-about-hero-copy h1 { font-size: 40px; }
-  .artifact-about-intro { padding-inline: 20px; }
+  .artifact-about-intro { padding-inline: 0; }
   .artifact-about-intro-copy h2 { font-size: 43px; }
   .artifact-about-seed-banner { min-height: 400px; }
   .artifact-about-beliefs h2 { font-size: 42px; }
