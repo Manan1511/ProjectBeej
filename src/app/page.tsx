@@ -102,6 +102,14 @@ export default async function HomePage() {
         </div>
       </div>
 
+      <section className="home-shop artifact-featured" id="shop" aria-labelledby="featured-title">
+        <div className="section-heading">
+          <div><h2 id="featured-title">Fall favourites</h2></div>
+          <Link className="text-link" href="/shop">Shop all snacks</Link>
+        </div>
+        <ProductGrid products={featuredProducts} listName="Home featured" />
+      </section>
+
       <section className="squad-section artifact-team" id="team" aria-labelledby="team-title">
         <div className="section-heading">
           <div><span className="eyebrow">Meet the team</span><h2 id="team-title">Snacking is a sport.</h2></div>
@@ -122,14 +130,6 @@ export default async function HomePage() {
             </Link>
           ))}
         </div>
-      </section>
-
-      <section className="home-shop artifact-featured" id="shop" aria-labelledby="featured-title">
-        <div className="section-heading">
-          <div><h2 id="featured-title">Fall favourites</h2></div>
-          <Link className="text-link" href="/shop">Shop all snacks</Link>
-        </div>
-        <ProductGrid products={featuredProducts} listName="Home featured" />
       </section>
 
       <section className="story-band artifact-story" id="story" aria-labelledby="story-title">

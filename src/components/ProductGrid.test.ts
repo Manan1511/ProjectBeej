@@ -25,7 +25,7 @@ const product: BeejProduct = {
   preview: false,
 };
 
-describe("homepage product presentation", () => {
+describe("product grid presentation", () => {
   it("uses the reference image-led card treatment without the mascot overlay", () => {
     const featuredProduct = { ...product, images: [product.images[0], { url: "/assets/home-hover.jpg", alt: "Alternate Peri Peri scene" }] };
     const markup = renderToStaticMarkup(createElement(ProductGrid, { products: [featuredProduct], listName: "Home featured" }));
@@ -67,13 +67,17 @@ describe("homepage product presentation", () => {
     expect(markup).toContain("All 1");
     expect(markup).toContain("Roasted Makhana 1");
     expect(markup).toContain("Ready to Roast 0");
-    expect(markup.indexOf('id="shop-search"')).toBeLessThan(markup.indexOf('aria-label="Filter products by category"'));
-    expect(markup).toContain('class="shop-filter-control"');
-    expect(markup).toContain('aria-label="Open category filters"');
-    expect(markup).toContain('aria-controls="shop-category-filter-menu"');
-    expect(markup).toContain('id="shop-category-filter-menu"');
+    expect(markup.indexOf('id="shop-search"')).toBeLessThan(markup.indexOf('aria-label="Open filters and sorting"'));
+    expect(markup).toContain('class="product-filter-control"');
+    expect(markup).toContain('aria-controls="product-filter-menu"');
+    expect(markup).toContain('id="product-filter-menu"');
+    expect(markup).toContain('aria-label="Product categories"');
+    expect(markup).toContain('aria-label="Sort products"');
     expect(markup).toContain('aria-label="Roasted Makhana 1"');
-    expect(markup).not.toContain("Sort");
+    expect(markup).toContain(">Featured</button>");
+    expect(markup).toContain(">Price: low to high</button>");
+    expect(markup).not.toContain('class="filter-pills"');
+    expect(markup).not.toContain('class="sort-control"');
     expect(markup).not.toContain("product-hover-photo");
     expect(markup).toContain('data-hover-image-src="/assets/peri-flatlay.jpg"');
     expect(markup).toContain("Bestseller");
@@ -96,5 +100,18 @@ describe("homepage product presentation", () => {
 
     expect(markup).not.toContain("product-hover-photo");
     expect(markup).toContain('data-hover-image-src="/assets/pudina-pop.jpg"');
+  });
+
+  it("puts collection category and sort choices inside the same filter icon", () => {
+    const markup = renderToStaticMarkup(createElement(ProductGrid, { products: [product], filters: true, listName: "Collection" }));
+
+    expect(markup).toContain('aria-label="Open filters and sorting"');
+    expect(markup).toContain('id="product-filter-menu"');
+    expect(markup).toContain('aria-label="Product categories"');
+    expect(markup).toContain('aria-label="Sort products"');
+    expect(markup).toContain(">All snacks</button>");
+    expect(markup).toContain(">Featured</button>");
+    expect(markup).not.toContain('class="filter-pills"');
+    expect(markup).not.toContain('class="sort-control"');
   });
 });

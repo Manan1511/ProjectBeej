@@ -33,7 +33,7 @@ export default function AboutPage() {
       <div className="about-hero-shade" />
       <div className="artifact-about-hero-copy artifact-about-content-align">
         <span className="eyebrow">Our story</span>
-        <h1 id="about-title">Rooted in<br />nature. Growing<br /><span>with purpose.</span></h1>
+        <h1 id="about-title">Rooted in nature.<br />Growing with purpose.</h1>
       </div>
     </section>
 

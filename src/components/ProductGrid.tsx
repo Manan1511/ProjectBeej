@@ -94,6 +94,61 @@ function ProductCard({ product, listName, index, cartSnapshot, shopPresentation 
   );
 }
 
+type FilterOption = { value: string; label: string };
+
+function ProductFilterControl({ filterOptions, category, sort, onCategoryChange, onSortChange }: {
+  filterOptions: FilterOption[];
+  category: string;
+  sort: string;
+  onCategoryChange: (value: string) => void;
+  onSortChange: (value: string) => void;
+}) {
+  const sortOptions = [
+    { value: "featured", label: "Featured" },
+    { value: "price-low", label: "Price: low to high" },
+    { value: "price-high", label: "Price: high to low" },
+  ];
+
+  function closeMenu(event: React.MouseEvent<HTMLButtonElement>) {
+    const menu = event.currentTarget.closest("details");
+    if (menu instanceof HTMLDetailsElement) menu.open = false;
+  }
+
+  return (
+    <details className="product-filter-control">
+      <summary aria-label="Open filters and sorting" aria-controls="product-filter-menu">
+        <svg className="product-filter-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M4 5h16l-6.4 7.2v5.2l-3.2 1.8v-7L4 5Z" />
+        </svg>
+      </summary>
+      <div className="product-filter-menu" id="product-filter-menu">
+        <div className="product-filter-menu-group" role="group" aria-label="Product categories">
+          <span>Category</span>
+          {filterOptions.map(({ value, label }) => (
+            <button className={category === value ? "selected" : ""} type="button" key={value} aria-label={label} aria-pressed={category === value} onClick={(event) => {
+              onCategoryChange(value);
+              closeMenu(event);
+            }}>
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="product-filter-menu-group" role="group" aria-label="Sort products">
+          <span>Sort by</span>
+          {sortOptions.map(({ value, label }) => (
+            <button className={sort === value ? "selected" : ""} type="button" key={value} aria-pressed={sort === value} onClick={(event) => {
+              onSortChange(value);
+              closeMenu(event);
+            }}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </details>
+  );
+}
+
 export function ProductGrid({ products, filters = false, listName = "Product list", presentation = "default", toolbar }: { products: BeejProduct[]; filters?: boolean; listName?: string; presentation?: "default" | "shop"; toolbar?: ReactNode }) {
   const [category, setCategory] = useState("All snacks");
   const [sort, setSort] = useState("featured");
@@ -134,42 +189,12 @@ export function ProductGrid({ products, filters = false, listName = "Product lis
         <div className={presentation === "shop" ? "catalog-controls artifact-shop-controls" : "catalog-controls"}>
           {presentation === "shop" && toolbar ? <div className="artifact-shop-search-row">
             <div className="catalog-controls-search">{toolbar}</div>
-            <details className="shop-filter-control">
-              <summary aria-label="Open category filters" aria-controls="shop-category-filter-menu">
-                <svg className="shop-filter-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                  <path d="M4 5h16l-6.4 7.2v5.2l-3.2 1.8v-7L4 5Z" />
-                </svg>
-              </summary>
-              <div className="shop-filter-menu" id="shop-category-filter-menu" role="group" aria-label="Quick category filters">
-                {filterOptions.map(({ value, label }) => (
-                  <button className={category === value ? "selected" : ""} type="button" key={value} aria-label={label} aria-pressed={category === value} onClick={(event) => {
-                    setCategory(value);
-                    const details = event.currentTarget.closest("details");
-                    if (details) details.open = false;
-                  }}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </details>
+            <ProductFilterControl filterOptions={filterOptions} category={category} sort={sort} onCategoryChange={setCategory} onSortChange={setSort} />
           </div> : null}
-          <div className="filter-pills" role="group" aria-label="Filter products by category">
-            {filterOptions.map(({ value, label }) => (
-              <button className={category === value ? "filter-pill selected" : "filter-pill"} type="button" key={value} onClick={() => setCategory(value)} aria-pressed={category === value}>
-                {label}
-              </button>
-            ))}
-          </div>
-          {presentation !== "shop" ? <>
-            {toolbar ? <div className="catalog-controls-trailing">
-              <div className="catalog-controls-search">{toolbar}</div>
-              <label className="sort-control">Sort <select value={sort} onChange={(event) => setSort(event.target.value)}>
-                <option value="featured">Featured</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option>
-              </select></label>
-            </div> : <label className="sort-control">Sort by <select value={sort} onChange={(event) => setSort(event.target.value)}>
-              <option value="featured">Featured</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option>
-            </select></label>}
-          </> : null}
+          {presentation !== "shop" || !toolbar ? <div className="catalog-controls-trailing">
+            {toolbar ? <div className="catalog-controls-search">{toolbar}</div> : null}
+            <ProductFilterControl filterOptions={filterOptions} category={category} sort={sort} onCategoryChange={setCategory} onSortChange={setSort} />
+          </div> : null}
         </div>
       ) : null}
       {cartSnapshot.message ? <p className="product-grid-status form-message" role="status">{cartSnapshot.message}</p> : null}

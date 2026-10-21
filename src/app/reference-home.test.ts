@@ -103,8 +103,8 @@ describe("homepage matches the approved artifact", () => {
     const expected = [
       "artifact-home-hero",
       "artifact-benefits",
-      "artifact-team",
       "artifact-featured",
+      "artifact-team",
       "artifact-story",
       "artifact-values",
       "artifact-community",
