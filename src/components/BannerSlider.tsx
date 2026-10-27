@@ -66,7 +66,7 @@ function createHeroSlides(products: HeroProduct[] = []): HeroSlide[] {
   return slides.length > 0 ? slides : createHeroSlides();
 }
 
-export function BannerSlider({ products = [] }: { products?: HeroProduct[] }) {
+export function BannerSlider({ products = [], previewMode = false }: { products?: HeroProduct[]; previewMode?: boolean }) {
   const artRef = useRef<HTMLDivElement>(null);
   const isHoveredRef = useRef(false);
   const isFocusedRef = useRef(false);
@@ -79,8 +79,9 @@ export function BannerSlider({ products = [] }: { products?: HeroProduct[] }) {
   const nextImagesReady = nextImages.every((slide) => preloadedHandles.has(slide.handle));
 
   useEffect(() => {
+    if (previewMode) return;
     emitCommerceEvent({ name: "view_promotion", promotion_id: "hero-1", promotion_name: "Hero banner 1", items: [] });
-  }, []);
+  }, [previewMode]);
 
   useEffect(() => {
     const art = artRef.current;

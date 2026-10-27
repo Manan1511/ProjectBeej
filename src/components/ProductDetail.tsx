@@ -21,7 +21,7 @@ const fallbackSkins: Record<string, { tint: string; mascot: string; player: stri
 async function postAction(url: string, variantId: string, quantity: number) {
   const queueKey = url === "/api/buy-now" ? "buy-now" : "bag";
   const response = await serializeCartWrite(() => fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ variantId, quantity, clientKey: getBrowserCartKey() }) }), queueKey);
-  const data = await response.json() as { error?: string; checkoutUrl?: string; cartId?: string; cart?: { totalQuantity: number }; acceptedQuantity?: number; warnings?: Array<{ message: string }> };
+  const data = await response.json() as { error?: string; checkoutUrl?: string; checkoutPath?: string; cartId?: string; cart?: { totalQuantity: number }; acceptedQuantity?: number; warnings?: Array<{ message: string }> };
   if (!response.ok) throw Object.assign(new Error(data.error || "That snack could not be added right now."), { status: response.status });
   return data;
 }
@@ -69,6 +69,10 @@ export function ProductDetail({ product, faqs, reviews }: { product: BeejProduct
     setBuyingNow(true);
     try {
       const result = await postAction("/api/buy-now", variant.id, quantity);
+      if (result.checkoutPath) {
+        window.location.assign(result.checkoutPath);
+        return;
+      }
       const acceptedQuantity = result.acceptedQuantity || 0;
       const item = createCommerceItem({ variantId: variant.id, title: product.title, price: variant.price.amount, quantity: acceptedQuantity, brand: "Project Beej", category: product.productType, variant: variant.title });
       const shopifyProduct = createShopifyAnalyticsProduct({ productGid: product.id, variantGid: variant.id, name: product.title, variantName: variant.title, brand: "Project Beej", category: product.productType, price: variant.price.amount, quantity: acceptedQuantity });

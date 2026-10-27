@@ -1,16 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import { SiteHeader } from "@/components/SiteHeader";
-import { SiteFooter } from "@/components/SiteFooter";
-import { StorefrontSettingsProvider } from "@/components/StorefrontSettingsProvider";
-import { PreviewNotice } from "@/components/PreviewNotice";
-import { getStorefrontMode } from "@/lib/storefront";
 import { getPublicSiteUrl } from "@/lib/site-url";
-import { getPublicTrackingConfig } from "@/lib/tracking-config";
-import { TrackingProvider } from "@/components/TrackingProvider";
-import { WebVitalsReporter } from "@/components/WebVitalsReporter";
-import { NavigationTimingReporter } from "@/components/NavigationTimingReporter";
 
 const outfit = localFont({
   src: "../../node_modules/@fontsource-variable/outfit/files/outfit-latin-wght-normal.woff2",
@@ -50,26 +41,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#3A4229" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const preview = getStorefrontMode() === "preview";
-  const trackingConfig = getPublicTrackingConfig(
-    process.env,
-    process.env.TRACKING_DEPLOY_CONTEXT || process.env.CONTEXT,
-  );
   return (
     <html lang="en" className={`${outfit.variable} ${anton.variable} ${dmSerifDisplay.variable}`}>
-      <body>
-        <StorefrontSettingsProvider>
-          <TrackingProvider config={trackingConfig} shopId="" currency="INR">
-            <WebVitalsReporter />
-            <NavigationTimingReporter />
-            <a className="skip-link" href="#main-content">Skip to content</a>
-            {preview ? <PreviewNotice /> : null}
-            <SiteHeader />
-            {children}
-            <SiteFooter />
-          </TrackingProvider>
-        </StorefrontSettingsProvider>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

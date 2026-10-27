@@ -10,10 +10,9 @@ describe("Shopify-managed homepage copy", () => {
     })).toEqual({ heroEyebrow: "Rooted in nature" });
   });
 
-  it("bounds copy length and drops empty values", () => {
+  it("rejects copy over its limit and drops empty values", () => {
     const parsed = parseHomeCopy({ heroDescription: ` ${"a".repeat(600)} `, storyDescription: "   " });
-    expect(parsed?.heroDescription).toHaveLength(320);
-    expect(parsed).not.toHaveProperty("storyDescription");
+    expect(parsed).toBeUndefined();
   });
 
   it("returns no override when the value is empty or malformed", () => {
@@ -22,34 +21,45 @@ describe("Shopify-managed homepage copy", () => {
     expect(parseHomeCopy({})).toBeUndefined();
   });
 
-  it("drops copy with unverified health, ingredient, origin, delivery, or price claims", () => {
+  it("preserves approved merchant copy including prices and shipping details", () => {
     const parsed = parseHomeCopy({
       heroDescription: "Wholesome snacks with high protein and no preservatives.",
       storyDescription: "Made in India and delivered free over ₹499.",
       heroShopLabel: "Shop now",
     });
 
-    expect(parsed).toEqual({ heroShopLabel: "Shop now" });
+    expect(parsed).toEqual({
+      heroDescription: "Wholesome snacks with high protein and no preservatives.",
+      storyDescription: "Made in India and delivered free over ₹499.",
+      heroShopLabel: "Shop now",
+    });
   });
 
-  it("applies the same content guard to the announcement", () => {
+  it("accepts the current free shipping announcement with its price", () => {
     expect(parseAnnouncement("Welcome to snacking that’s rooted in nature 🌱")).toBe("Welcome to snacking that’s rooted in nature 🌱");
-    expect(parseAnnouncement("Free delivery on every order")).toBeUndefined();
+    expect(parseAnnouncement("Free shipping on orders above ₹499 🌱")).toBe("Free shipping on orders above ₹499 🌱");
   });
 
-  it("blocks common health and discount claims in merchant-managed copy", () => {
-    expect(parseAnnouncement("A snack that is high in protein")).toBeUndefined();
-    expect(parseAnnouncement("20% off today only")).toBeUndefined();
-    expect(parseAnnouncement("A low in sugar snack")).toBeUndefined();
-    expect(parseAnnouncement("10 percent off today only")).toBeUndefined();
+  it("parses versioned content, visibility, and copy without trusting arbitrary values", async () => {
+    const { parseShopCopy, parseAboutCopy, parseFooterCopy, parseSiteVisibility } = await import("./storefront-settings");
+    expect(parseSiteVisibility({ homeAthletes: false, newsletter: true, ignored: false })).toEqual({ homeAthletes: false, newsletter: true });
+    expect(parseShopCopy({ heroTitle: "Pantry", benefitOneTitle: "Shipping", unknown: "ignored", seedBannerLineOne: "Start" })).toEqual({ heroTitle: "Pantry", benefitOneTitle: "Shipping", seedBannerLineOne: "Start" });
+    expect(parseAboutCopy({ heroTitleLineOne: "Rooted", beliefOneDescription: "Honest", unknown: "ignored" })).toEqual({ heroTitleLineOne: "Rooted", beliefOneDescription: "Honest" });
+    expect(parseFooterCopy({ tagline: "Rooted in nature", location: "Surat", unknown: "ignored" })).toEqual({ tagline: "Rooted in nature", location: "Surat" });
   });
 
-  it("filters carousel slides with unverified alt text and preserves safe slide text", () => {
+  it("trims valid merchant copy without silently truncating it", () => {
+    expect(parseAnnouncement("  Free delivery on every order  ")).toBe("Free delivery on every order");
+    expect(parseAnnouncement("a".repeat(161))).toBeUndefined();
+  });
+
+  it("filters invalid slide sources and keeps plain descriptive alt text", () => {
     expect(parseStorefrontSlides([
-      { image: "/assets/hero.webp", alt: "High in protein" },
-      { image: "https://cdn.shopify.com/s/files/1/hero.webp", alt: "20% off today" },
+      { image: "/assets/hero.webp", alt: "Roasted makhana, high in protein" },
+      { image: "https://example.com/hero.webp", alt: "Project Beej snack pack" },
       { image: "/assets/hero.webp", alt: "Project Beej snack pack on a bright table." },
     ])).toEqual([
+      { src: "/assets/hero.webp", alt: "Roasted makhana, high in protein" },
       { src: "/assets/hero.webp", alt: "Project Beej snack pack on a bright table." },
     ]);
   });

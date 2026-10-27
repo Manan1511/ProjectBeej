@@ -5,7 +5,7 @@ import { StoreSearchForm } from "@/components/StoreSearchForm";
 import { getCardProducts } from "@/lib/storefront";
 import { searchProducts } from "@/lib/product-search";
 
-type Props = { searchParams: Promise<{ q?: string | string[] }> };
+type Props = { searchParams: Promise<{ q?: string | string[] }>; previewMode?: boolean };
 
 export function ShopCatalogFallback() {
   return <section className="catalog-section artifact-shop-catalog shop-loading" aria-label="Loading snacks" aria-busy="true">
@@ -15,7 +15,7 @@ export function ShopCatalogFallback() {
   </section>;
 }
 
-export async function ShopCatalog({ searchParams }: Props) {
+export async function ShopCatalog({ searchParams, previewMode = false }: Props) {
   const { q } = await searchParams;
   const query = (Array.isArray(q) ? q[0] || "" : q || "").trim().slice(0, 80);
   const products = await getCardProducts();
@@ -24,9 +24,9 @@ export async function ShopCatalog({ searchParams }: Props) {
     return <section className="catalog-section artifact-shop-catalog" aria-label="Shop snacks"><div className="empty-products"><Image src="/assets/seed.png" alt="" width={54} height={54} /><h2>No snacks are available right now</h2><p>Please check back soon.</p></div></section>;
   }
   return <section className="catalog-section artifact-shop-catalog" aria-label="Shop snacks">
-    {query && results.length === 0 ? <>
+      {query && results.length === 0 ? <>
       <StoreSearchForm key={query} compact query={query} resultCount={results.length} />
       <div className="empty-products search-empty"><Image src="/assets/seed.png" alt="" width={54} height={54} /><h2>No snacks found</h2><p>Try another flavour or snack type.</p><Link className="text-link" href="/shop#shop-search">Clear search ↗</Link></div>
-    </> : <ProductGrid products={results} filters presentation="shop" toolbar={<StoreSearchForm key={query} compact query={query} resultCount={results.length} />} listName={query ? "Shop search results" : "Shop all"} />}
+    </> : <ProductGrid products={results} filters presentation="shop" toolbar={<StoreSearchForm key={query} compact query={query} resultCount={results.length} />} listName={query ? "Shop search results" : "Shop all"} previewMode={previewMode} />}
   </section>;
 }

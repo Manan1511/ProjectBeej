@@ -5,7 +5,7 @@ vi.mock("@/lib/storefront", () => ({ getCardProducts: vi.fn(), getRequestCachedS
 vi.mock("@/lib/request-ip", () => ({ requestBuyerIp: vi.fn(async () => null) }));
 vi.mock("@/lib/site-url", () => ({ getPublicSiteUrl: () => null }));
 
-import HomePage from "./page";
+import HomePage from "./(storefront)/page";
 import { SproutVideo } from "@/components/SproutVideo";
 import { getCardProducts, getRequestCachedSiteSettings } from "@/lib/storefront";
 

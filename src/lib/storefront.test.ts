@@ -16,6 +16,7 @@ import {
   getShopifyCart,
   getShopifyCartCount,
   getShopifyCartSnapshot,
+  getSiteSettings,
   removeShopifyCartLines,
   updateShopifyCartLines,
 } from "./storefront";
@@ -121,6 +122,30 @@ describe("Shopify cart response mapping", () => {
     const cachedLoader = mockUnstableCache.mock.calls.at(-1)?.[0] as (() => Promise<unknown>) | undefined;
     await expect(cachedLoader?.()).rejects.toThrow("Shopify returned incomplete product data.");
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("caches only validated public settings with the publish invalidation tag", async () => {
+    vi.stubEnv("SHOPIFY_MODE", "live");
+    respondWith({ shop: { id: "gid://shopify/Shop/1", paymentSettings: { currencyCode: "INR" }, storefrontSettings: { value: JSON.stringify({
+      contentVersion: 1,
+      visibility: { homeAthletes: false, newsletter: true, privateDraft: true },
+      shopCopy: { heroTitle: "Shop all", ignored: "must not load" },
+      aboutCopy: { heroTitleLineOne: "Rooted in nature." },
+      footerCopy: { tagline: "Rooted in nature. Growing with purpose." },
+    }) } } });
+
+    const settings = await getSiteSettings();
+
+    expect(settings).toMatchObject({
+      contentVersion: 1,
+      visibility: { homeAthletes: false, newsletter: true },
+      shopCopy: { heroTitle: "Shop all" },
+      aboutCopy: { heroTitleLineOne: "Rooted in nature." },
+      footerCopy: { tagline: "Rooted in nature. Growing with purpose." },
+    });
+    expect(settings.visibility).not.toHaveProperty("privateDraft");
+    expect(settings.shopCopy).not.toHaveProperty("ignored");
+    expect(mockUnstableCache.mock.calls.at(-1)?.[2]).toEqual({ revalidate: 60, tags: ["storefront-settings"] });
   });
 
   it("keeps a failed Shopify catalog read distinct from a successful empty catalog", async () => {

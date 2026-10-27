@@ -10,9 +10,10 @@ vi.mock("@/lib/storefront", () => ({
   parseProductFaqs: vi.fn(() => []),
 }));
 vi.mock("@/lib/site-url", () => ({ getPublicSiteUrl: () => null }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
-import ProductPage from "./products/[handle]/page";
-import CartPage from "./cart/page";
+import ProductPage from "./(storefront)/products/[handle]/page";
+import CartPage from "./(storefront)/cart/page";
 import { ProductDetail } from "@/components/ProductDetail";
 import { CartPanel } from "@/components/CartPanel";
 import { getRequestCachedProduct, getCardProducts } from "@/lib/storefront";

@@ -11,6 +11,7 @@
     "build": "next build",
     "start": "next start --hostname 0.0.0.0",
     "lint": "eslint .",
+    "admin:setup": "node scripts/admin-setup.mjs",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json && tsc --noEmit -p tsconfig.netlify.json",
     "test": "vitest run",
     "test:watch": "vitest"

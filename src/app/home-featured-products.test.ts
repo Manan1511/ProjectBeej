@@ -6,7 +6,7 @@ vi.mock("@/lib/storefront", () => ({ getCardProducts: vi.fn(), getRequestCachedS
 vi.mock("@/lib/request-ip", () => ({ requestBuyerIp: vi.fn(async () => null) }));
 vi.mock("@/lib/site-url", () => ({ getPublicSiteUrl: () => null }));
 
-import HomePage from "./page";
+import HomePage, { HomePageContent } from "./(storefront)/page";
 import { ShopCatalog } from "@/components/ShopCatalog";
 import { BannerSlider } from "@/components/BannerSlider";
 import { ProductGrid } from "@/components/ProductGrid";
@@ -123,28 +123,39 @@ describe("homepage featured product ordering", () => {
     expect(cards.every(({ className }) => className === "squad-card")).toBe(true);
   });
 
-  it("shows four featured products and excludes Classic Makhana from the homepage", async () => {
+  it("shows only the selected products in the saved order", async () => {
     const page = await HomePage();
     const grid = findProductGrid(page);
 
     expect(grid?.props.products.map(({ handle }) => handle)).toEqual([
+      "classic-makhana",
       "featured-a",
       "featured-b",
-      "unlisted-1",
-      "unlisted-2",
     ]);
   });
 
-  it("feeds the homepage hero the distinct featured products", async () => {
+  it("keeps hero rotation independent from the featured shelf selection", async () => {
     const page = await HomePage();
     const slider = findBannerSlider(page);
 
     expect(slider?.props.products.map(({ handle }) => handle)).toEqual([
-      "featured-a",
-      "featured-b",
       "unlisted-1",
       "unlisted-2",
+      "unlisted-3",
+      "unlisted-4",
+      "unlisted-5",
+      "unlisted-6",
+      "featured-b",
+      "featured-a",
+      "classic-makhana",
     ]);
+  });
+
+  it("removes the full athlete section when the admin draft hides it", async () => {
+    const page = await HomePageContent({ settingsOverride: { visibility: { homeAthletes: false } }, previewMode: true });
+    const root = page as ReactElement<{ children?: ReactNode }>;
+    expect(collectClassElements(root.props.children, "artifact-team")).toHaveLength(0);
+    expect(collectText(root.props.children).join(" ")).not.toContain("Snacking is a sport.");
   });
 
   it("keeps the full catalog, including Classic Makhana, on the shop page", async () => {

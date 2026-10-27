@@ -4,13 +4,13 @@ import { readFileSync } from "node:fs";
 import Image from "next/image";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/storefront", () => ({ getCardProducts: vi.fn(), getShopifyPage: vi.fn() }));
+vi.mock("@/lib/storefront", () => ({ getCardProducts: vi.fn(), getShopifyPage: vi.fn(), getRequestCachedSiteSettings: vi.fn(async () => ({})) }));
 vi.mock("@/lib/request-ip", () => ({ requestBuyerIp: vi.fn(async () => null) }));
 vi.mock("@/lib/site-url", () => ({ getPublicSiteUrl: () => null }));
 vi.mock("@/lib/cart-cookie", () => ({ readStoredCartId: vi.fn(async () => "cart-id") }));
 
-import ShopPage from "./shop/page";
-import AboutPage from "./about/page";
+import ShopPage from "./(storefront)/shop/page";
+import AboutPage from "./(storefront)/about/page";
 import { ProductGrid } from "@/components/ProductGrid";
 import { CartCountLink } from "@/components/CartCountLink";
 import { ShopEditorialSections } from "@/components/ShopEditorialSections";

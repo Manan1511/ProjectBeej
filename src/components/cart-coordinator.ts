@@ -384,9 +384,9 @@ if (typeof window !== "undefined" && typeof BroadcastChannel !== "undefined") {
   });
 }
 
-export function useCartSnapshot(): CartCoordinatorSnapshot {
+export function useCartSnapshot(load = true): CartCoordinatorSnapshot {
   const snapshot = useSyncExternalStore(cartCoordinator.subscribe, cartCoordinator.getSnapshot, cartCoordinator.getServerSnapshot);
-  useEffect(() => { void cartCoordinator.load().catch(() => undefined); }, []);
+  useEffect(() => { if (load) void cartCoordinator.load().catch(() => undefined); }, [load]);
   return snapshot;
 }
 

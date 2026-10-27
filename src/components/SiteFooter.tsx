@@ -7,12 +7,12 @@ import { ConsentSettingsButton, TrackedOutboundLink } from "@/components/Tracked
 import { NewsletterForm } from "@/components/NewsletterForm";
 import { useStorefrontSettings } from "@/components/StorefrontSettingsProvider";
 
-export function SiteFooter({ settings: fallback = {} }: { settings?: SiteSettings } = {}) {
+export function SiteFooter({ settings: fallback = {}, preview = false }: { settings?: SiteSettings; preview?: boolean } = {}) {
   const { settings } = useStorefrontSettings(fallback);
   const email = settings.contactEmail || "hello@projectbeej.com";
   return (
     <>
-      <section className="newsletter-section footer-newsletter" aria-labelledby="newsletter-title">
+      {settings.visibility?.newsletter === false ? null : <section className="newsletter-section footer-newsletter" aria-labelledby="newsletter-title">
         <div className="newsletter-inner">
           <div className="newsletter-copy">
             <h2 id="newsletter-title">
@@ -20,16 +20,16 @@ export function SiteFooter({ settings: fallback = {} }: { settings?: SiteSetting
             </h2>
             <p>{settings.homeCopy?.newsletterDescription || "New flavours, new snacks and early-access offers. No spam."}</p>
           </div>
-          <NewsletterForm />
+          {preview ? <div className="newsletter-form newsletter-preview-form"><div className="newsletter-fields"><input type="email" placeholder="Your email" aria-label="Your email, disabled in preview" disabled /><button className="button button-sage" type="button" disabled>Join</button></div></div> : <NewsletterForm />}
         </div>
-      </section>
+      </section>}
       <footer className="site-footer artifact-footer">
         <div className="footer-main">
           <div className="footer-brand">
             <Link href="/" className="footer-logo" aria-label="Project Beej home">
               <Image src="/assets/logo-wordmark.png" alt="Project Beej" fill sizes="(max-width: 760px) 130px, 150px" />
             </Link>
-            <p>Rooted in nature. Growing with purpose.</p>
+            <p>{settings.footerCopy?.tagline || "Rooted in nature. Growing with purpose."}</p>
           </div>
           <nav className="footer-group" aria-label="Shop links">
             <h2>Shop</h2>
@@ -45,8 +45,10 @@ export function SiteFooter({ settings: fallback = {} }: { settings?: SiteSetting
           </nav>
           <div className="footer-group footer-contact">
             <h2>Say hello</h2>
-            <TrackedOutboundLink href={`mailto:${email}`} kind="email">{email}</TrackedOutboundLink>
-            <p>Surat, Gujarat, India</p>
+            {preview ? <a href={`mailto:${email}`}>{email}</a> : <TrackedOutboundLink href={`mailto:${email}`} kind="email">{email}</TrackedOutboundLink>}
+            <p>{settings.footerCopy?.location || "Surat, Gujarat, India"}</p>
+            {settings.instagramUrl ? <a href={settings.instagramUrl} target="_blank" rel="noreferrer">Instagram</a> : null}
+            {settings.whatsappUrl ? (preview ? <a href={settings.whatsappUrl} target="_blank" rel="noreferrer">WhatsApp</a> : <TrackedOutboundLink href={settings.whatsappUrl} kind="whatsapp" target="_blank" rel="noreferrer">WhatsApp</TrackedOutboundLink>) : null}
           </div>
         </div>
         <div className="footer-bottom">
@@ -55,7 +57,9 @@ export function SiteFooter({ settings: fallback = {} }: { settings?: SiteSetting
             <Link href="/policies/privacy">Privacy</Link>
             <Link href="/policies/refund">Refunds</Link>
             <Link href="/policies/terms">Terms</Link>
-            <ConsentSettingsButton className="footer-consent-settings">Privacy settings</ConsentSettingsButton>
+            {preview
+              ? <button className="footer-consent-settings" type="button" disabled>Privacy settings</button>
+              : <ConsentSettingsButton className="footer-consent-settings">Privacy settings</ConsentSettingsButton>}
           </div>
         </div>
       </footer>

@@ -4,11 +4,11 @@
 
 Complete every item before opening live purchases:
 
-- [ ] Rotate the private token shared during setup. Confirm Storefront API credentials and the installed Shopify Admin app credentials (`read_orders`, `write_customers`) are present only in server settings.
+- [ ] Rotate the private token shared during setup. Confirm Storefront API credentials and the installed Shopify Admin app credentials (`read_orders`, `write_customers`, `read_draft_orders`, `write_draft_orders`, `write_orders`) are present only in server settings.
 - [ ] Publish the five approved products to Headless. Verify handles, collections, variants, pack sizes, prices, SKUs, stock, images, and product facts.
 - [ ] Complete and approve the Privacy, Refund, and Terms policies, About page, contact email, WhatsApp link, and social links.
 - [ ] Confirm Shopify India market/currency, tax configuration, merchant-managed shipping zones and rates, and dispatch capacity. Set `SHOPIFY_SHIPPING_CONFIGURED=1` only after the configured rates match the merchant’s approved shipping policy.
-- [ ] Install and activate Razorpay Secure in Shopify checkout. Leave COD disabled.
+- [ ] For sandbox checkout verification, configure only Cashfree sandbox credentials and keep `CASHFREE_ENVIRONMENT=sandbox`. Cashfree production mode is not implemented. Leave COD disabled.
 - [ ] Connect the GitHub repository to Netlify with `main` as the production branch. Confirm the root `netlify.toml` uses Node 22, `npm run build`, and `.next`.
 - [ ] Protect Deploy Preview and branch-deploy URLs with team login or a site password before sharing them.
 - [ ] Set scoped server-side environment variables in Netlify, including `SHOPIFY_MODE=preview` for non-production and `SHOPIFY_MODE=live` for Production, Storefront token, Admin app client ID/secret, `SITE_URL` with the final HTTPS origin, and exact verified checkout hostnames only. Store runtime credentials with **Builds** and **Functions** scopes.
@@ -24,7 +24,7 @@ Use a merchant-approved test method and prevent test orders from reaching dispat
 3. Open a product, select each variant, change quantity, and check stock limits and unavailable states.
 4. Add to cart, update quantity, remove a line, refresh, and confirm the private cart recovers. Confirm shipping estimate behavior against the configured Shopify rate.
 5. Use Buy Now and verify it starts a separate checkout without replacing the saved cart.
-6. Follow the Shopify checkout to the merchant-approved payment test. Verify success, failure, cancel, and retry behavior. In Shopify Admin, confirm the resulting order, payment state, total, inventory change, and fulfillment status.
+6. Follow Cashfree sandbox checkout for success, failure, cancel, and retry behavior. In Shopify Admin, confirm a test order is created with the correct total and that inventory is not reserved or decremented. Confirm the ordinary Shopify checkout remains available when Cashfree sandbox is not configured.
 7. Submit a newsletter test only with an approved test address. Confirm customer marketing consent is recorded; confirm the endpoint reports a configuration error when the Admin integration is unavailable.
 8. If a live payment/refund test is required, get the merchant’s transaction authorization first and ensure nobody dispatches the test order.
 
@@ -41,7 +41,7 @@ Use a merchant-approved test method and prevent test orders from reaching dispat
 
 Record the time, affected URL, device/browser, product/variant, Shopify order number if one exists, last successful step, and a redacted error message. Never include tokens, full payment data, or customer address in a support ticket.
 
-- **P1: Checkout or payment failure, wrong charged total, or order/payment mismatch.** Alert the merchant promptly, pause purchase actions using the preview switch if needed, check Netlify and Shopify/Razorpay status, and reconcile the Shopify order before retrying.
+- **P1: Checkout or payment failure, wrong charged total, or order/payment mismatch.** Alert the merchant promptly, pause purchase actions using the preview switch if needed, check Netlify, Cashfree, and Shopify status, and reconcile the Shopify order before retrying.
 - **P2: One product, collection, or content issue.** Verify product publication, stock, metafield JSON, image URL, and product handle in Shopify; correct the source data and reload the storefront.
 - **P3: Copy or layout issue without purchase impact.** Capture the affected viewport and URL, check whether it comes from Shopify-managed content or the deployed build, then schedule the smallest fix.
 

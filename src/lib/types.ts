@@ -86,11 +86,90 @@ export type HomeCopy = Partial<Record<
   | "newsletterEyebrow"
   | "newsletterTitleLead"
   | "newsletterTitleEmphasis"
-  | "newsletterDescription",
+  | "newsletterDescription"
+  | "featuredTitle"
+  | "featuredLinkLabel"
+  | "teamEyebrow"
+  | "teamTitle"
+  | "teamDescription"
+  | "valuesTitle"
+  | "valueOneTitle"
+  | "valueOneDescription"
+  | "valueTwoTitle"
+  | "valueTwoDescription"
+  | "valueThreeTitle"
+  | "valueThreeDescription"
+  | "communityEyebrow"
+  | "communityTitle"
+  | "communityLinkLabel",
   string
 >>;
 
+export type SiteVisibility = Partial<Record<
+  | "homeRibbon"
+  | "homeFeatured"
+  | "homeAthletes"
+  | "homeStory"
+  | "homeValues"
+  | "homeCommunity"
+  | "shopSnackSpotted"
+  | "shopBenefits"
+  | "aboutIntroGallery"
+  | "aboutSeedBanner"
+  | "aboutBeliefs"
+  | "aboutClosing"
+  | "announcement"
+  | "newsletter",
+  boolean
+>>;
+
+export type ShopCopy = Partial<Record<
+  | "heroEyebrow"
+  | "heroTitle"
+  | "heroDescriptionLineOne"
+  | "heroDescriptionLineTwo"
+  | "spottedTitle"
+  | "spottedDescription"
+  | "seedBannerLineOne"
+  | "seedBannerLineTwo"
+  | "benefitOneTitle"
+  | "benefitOneDescription"
+  | "benefitTwoTitle"
+  | "benefitTwoDescription"
+  | "benefitThreeTitle"
+  | "benefitThreeDescription",
+  string
+>>;
+
+export type AboutCopy = Partial<Record<
+  | "heroEyebrow"
+  | "heroTitleLineOne"
+  | "heroTitleLineTwo"
+  | "introTitleLineOne"
+  | "introTitleLineTwo"
+  | "introTitleEmphasis"
+  | "introParagraphOne"
+  | "introParagraphTwo"
+  | "introParagraphThree"
+  | "seedEyebrow"
+  | "seedTitleLineOne"
+  | "seedTitleLineTwo"
+  | "beliefsTitle"
+  | "beliefOneTitle"
+  | "beliefOneDescription"
+  | "beliefTwoTitle"
+  | "beliefTwoDescription"
+  | "beliefThreeTitle"
+  | "beliefThreeDescription"
+  | "closingTitle"
+  | "closingButtonLabel",
+  string
+>>;
+
+export type FooterCopy = Partial<Record<"tagline" | "location", string>>;
+
 export type SiteSettings = {
+  contentVersion?: number;
   shopId?: string;
   currencyCode?: string;
   announcement?: string;
@@ -99,5 +178,9 @@ export type SiteSettings = {
   contactEmail?: string;
   featuredHandles?: string[];
   slides?: Array<{ src: string; alt: string }>;
+  visibility?: SiteVisibility;
   homeCopy?: HomeCopy;
+  shopCopy?: ShopCopy;
+  aboutCopy?: AboutCopy;
+  footerCopy?: FooterCopy;
 };

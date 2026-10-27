@@ -36,13 +36,13 @@ const shopHoverImageFallbacks: Record<string, string> = {
   "classic-makhana": "/assets/makhana-lotus.jpg",
 };
 
-function ProductCard({ product, listName, index, cartSnapshot, shopPresentation = false }: { product: BeejProduct; listName: string; index: number; cartSnapshot: CartCoordinatorSnapshot; shopPresentation?: boolean }) {
+function ProductCard({ product, listName, index, cartSnapshot, shopPresentation = false, previewMode = false }: { product: BeejProduct; listName: string; index: number; cartSnapshot: CartCoordinatorSnapshot; shopPresentation?: boolean; previewMode?: boolean }) {
   const [status, setStatus] = useState("");
   const [hoverImageRequested, setHoverImageRequested] = useState(false);
   const skin = skins[product.handle] || { tint: "#D6EBC8", mascot: "/assets/seed.png", player: product.productType };
   const image = product.images[0];
   const firstAvailable = product.variants.find((variant) => variant.availableForSale);
-  const ready = !product.preview && product.availableForSale && firstAvailable;
+  const ready = !previewMode && !product.preview && product.availableForSale && firstAvailable;
   const quantity = cartSnapshot.cart?.lines.find((line) => line.merchandise.id === firstAvailable?.id)?.quantity || 0;
   const totalQuantity = cartSnapshot.cart?.totalQuantity || 0;
   const isHomeFeatured = listName === "Home featured";
@@ -60,6 +60,7 @@ function ProductCard({ product, listName, index, cartSnapshot, shopPresentation 
   return (
     <article className={isHomeFeatured ? "product-card home-product-card" : shopPresentation ? "product-card shop-product-card" : "product-card"} style={{ "--product-tint": skin.tint } as React.CSSProperties}>
       <Link className="product-card-image" href={`/products/${product.handle}`} aria-label={`View ${product.title}`} data-hover-image-src={hoverImage?.url} onPointerEnter={() => setHoverImageRequested(true)} onFocus={() => setHoverImageRequested(true)} onClick={() => {
+        if (previewMode) return;
         const item = createCommerceItem({ variantId: firstAvailable?.id || product.variants[0]?.id || "", title: product.title, price: product.price.amount, brand: "Project Beej", category: product.productType, listName, index });
         if (item) emitCommerceEvent({ name: "select_item", currency: product.price.currencyCode, items: [item], item_list_name: listName });
       }}>
@@ -73,6 +74,7 @@ function ProductCard({ product, listName, index, cartSnapshot, shopPresentation 
       <div className="product-card-copy">
         <span className="eyebrow">{product.productType}</span>
         <h3><Link href={`/products/${product.handle}`} onClick={() => {
+          if (previewMode) return;
           const item = createCommerceItem({ variantId: firstAvailable?.id || product.variants[0]?.id || "", title: product.title, price: product.price.amount, brand: "Project Beej", category: product.productType, listName, index });
           if (item) emitCommerceEvent({ name: "select_item", currency: product.price.currencyCode, items: [item], item_list_name: listName });
         }}>{product.title}</Link></h3>
@@ -82,7 +84,7 @@ function ProductCard({ product, listName, index, cartSnapshot, shopPresentation 
             <span className="product-price">{formatINR(product.price.amount)}{product.preview && !isEditorialCard ? <small>draft</small> : null}</span>
             {isEditorialCard ? <span className="product-unit">{productUnits[product.handle] || "Jar"}</span> : null}
           </div>
-          {ready && quantity > 0 ? <div className="quantity-stepper product-card-quantity-stepper" aria-label={`Quantity for ${product.title}`}>
+          {previewMode ? <span className="unavailable-note">Preview only</span> : ready && quantity > 0 ? <div className="quantity-stepper product-card-quantity-stepper" aria-label={`Quantity for ${product.title}`}>
             <button type="button" onClick={() => changeCartQuantity(-1)} aria-label={`Decrease ${product.title} quantity`}>−</button>
             <span aria-live="polite">{quantity}</span>
             <button type="button" onClick={() => changeCartQuantity(1)} disabled={quantity >= 10 || totalQuantity >= 10} aria-label={`Increase ${product.title} quantity`}>+</button>
@@ -149,10 +151,11 @@ function ProductFilterControl({ filterOptions, category, sort, onCategoryChange,
   );
 }
 
-export function ProductGrid({ products, filters = false, listName = "Product list", presentation = "default", toolbar }: { products: BeejProduct[]; filters?: boolean; listName?: string; presentation?: "default" | "shop"; toolbar?: ReactNode }) {
+export function ProductGrid({ products, filters = false, listName = "Product list", presentation = "default", toolbar, previewMode = false }: { products: BeejProduct[]; filters?: boolean; listName?: string; presentation?: "default" | "shop"; toolbar?: ReactNode; previewMode?: boolean }) {
   const [category, setCategory] = useState("All snacks");
   const [sort, setSort] = useState("featured");
-  const cartSnapshot = useCartSnapshot();
+  const cartSnapshot = useCartSnapshot(!previewMode);
+  const productGridMessage = cartSnapshot.message.startsWith("Your previous bag expired.") ? "" : cartSnapshot.message;
   const shown = useMemo(() => {
     const filtered = category === "All snacks" ? products : products.filter((product) => product.productType === category);
     if (sort === "price-low") return [...filtered].sort((a, b) => Number(a.price.amount) - Number(b.price.amount));
@@ -171,7 +174,7 @@ export function ProductGrid({ products, filters = false, listName = "Product lis
   const lastListView = useRef("");
 
   useEffect(() => {
-    if (!shown.length) return;
+    if (previewMode || !shown.length) return;
     const listKey = `${listName}:${category}:${sort}:${shown.map((product) => product.id).join(",")}`;
     if (lastListView.current === listKey) return;
     lastListView.current = listKey;
@@ -181,7 +184,7 @@ export function ProductGrid({ products, filters = false, listName = "Product lis
       return item ? [item] : [];
     });
     if (items.length) emitCommerceEvent({ name: "view_item_list", currency: shown[0]?.price.currencyCode, items, item_list_name: listName, item_list_id: listName.toLowerCase().replace(/[^a-z0-9]+/g, "_") });
-  }, [category, listName, shown, sort]);
+  }, [category, listName, previewMode, shown, sort]);
 
   return (
     <>
@@ -197,8 +200,8 @@ export function ProductGrid({ products, filters = false, listName = "Product lis
           </div> : null}
         </div>
       ) : null}
-      {cartSnapshot.message ? <p className="product-grid-status form-message" role="status">{cartSnapshot.message}</p> : null}
-      {shown.length ? <div className={presentation === "shop" ? "product-grid artifact-shop-grid" : "product-grid"}>{shown.map((product, index) => <ProductCard product={product} listName={listName} index={index + 1} cartSnapshot={cartSnapshot} shopPresentation={presentation === "shop"} key={product.id} />)}</div> : (
+      {productGridMessage ? <p className="product-grid-status form-message" role="status">{productGridMessage}</p> : null}
+      {shown.length ? <div className={presentation === "shop" ? "product-grid artifact-shop-grid" : "product-grid"}>{shown.map((product, index) => <ProductCard product={product} listName={listName} index={index + 1} cartSnapshot={cartSnapshot} shopPresentation={presentation === "shop"} previewMode={previewMode} key={product.id} />)}</div> : (
         <div className="empty-products"><Image src="/assets/seed.png" alt="" width={54} height={54} /><h2>The pantry is sprouting</h2><p>Products will appear here when they’re published in Shopify.</p></div>
       )}
     </>

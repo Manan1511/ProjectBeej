@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { ShopifyCart } from "@/lib/types";
 import { formatINR } from "@/lib/commerce";
@@ -22,7 +23,8 @@ function reportCartView(cart: ShopifyCart) {
   if (items.length) emitCommerceEvent({ name: "view_cart", currency: cart.cost.subtotalAmount.currencyCode, value: Number(cart.cost.subtotalAmount.amount), items });
 }
 
-export function CartPanel({ shippingConfigured }: { shippingConfigured: boolean }) {
+export function CartPanel({ shippingConfigured, cashfreeCheckoutEnabled = false }: { shippingConfigured: boolean; cashfreeCheckoutEnabled?: boolean }) {
+  const router = useRouter();
   const snapshot = useCartSnapshot();
   const cart = snapshot.cart;
   const confirmedCart = snapshot.confirmedCart;
@@ -43,6 +45,10 @@ export function CartPanel({ shippingConfigured }: { shippingConfigured: boolean 
       await cartCoordinator.flush();
       const checkoutCart = cartCoordinator.getSnapshot().confirmedCart;
       if (!checkoutCart || checkoutCart.totalQuantity < 1) throw new Error("Your bag is empty.");
+      if (cashfreeCheckoutEnabled) {
+        router.push("/checkout");
+        return;
+      }
       const response = await fetch("/api/cart/checkout", { method: "POST", cache: "no-store" });
       const data = await readResponse(response);
       if (!data.checkoutUrl) throw new Error("Shopify checkout could not be opened.");
@@ -116,7 +122,7 @@ export function CartPanel({ shippingConfigured }: { shippingConfigured: boolean 
         <div className="summary-row summary-total"><span>{snapshot.pending ? "Estimated total" : "Order total"}</span><strong>{formatINR(shownTotal)}*</strong></div>
         <p className="tax-note">*Shopify confirms taxes and delivery charges in the secure checkout.</p>
         <button className="button button-sage checkout-button" type="button" onClick={checkout} disabled={checkingOut}>{checkingOut ? "Opening checkout…" : "Checkout securely"}</button>
-        <p className="checkout-note">Online payment and order confirmation are handled by Shopify.</p>
+        <p className="checkout-note">{cashfreeCheckoutEnabled ? "Cashfree sandbox checkout is active. Completed payments create Shopify test orders without reserving stock." : "Online payment and order confirmation are handled by Shopify."}</p>
         <p className="form-message" role="status">{message}</p>
       </aside>
     </div>

@@ -1,11 +1,17 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { BeejProduct } from "@/lib/types";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+vi.mock("@/components/cart-coordinator", () => ({
+  cartCoordinator: { adjustQuantity: vi.fn(), getSnapshot: vi.fn(() => ({ message: "" })) },
+  describeProductVariant: vi.fn(() => ({})),
+  useCartSnapshot: vi.fn(),
+}));
 
 import { ProductGrid } from "./ProductGrid";
+import { useCartSnapshot } from "@/components/cart-coordinator";
 
 const product: BeejProduct = {
   id: "gid://shopify/Product/1",
@@ -26,6 +32,10 @@ const product: BeejProduct = {
 };
 
 describe("product grid presentation", () => {
+  beforeEach(() => {
+    vi.mocked(useCartSnapshot).mockReturnValue({ cart: null, confirmedCart: null, loaded: true, loading: false, pending: false, message: "" });
+  });
+
   it("uses the reference image-led card treatment without the mascot overlay", () => {
     const featuredProduct = { ...product, images: [product.images[0], { url: "/assets/home-hover.jpg", alt: "Alternate Peri Peri scene" }] };
     const markup = renderToStaticMarkup(createElement(ProductGrid, { products: [featuredProduct], listName: "Home featured" }));
@@ -113,5 +123,21 @@ describe("product grid presentation", () => {
     expect(markup).toContain(">Featured</button>");
     expect(markup).not.toContain('class="filter-pills"');
     expect(markup).not.toContain('class="sort-control"');
+  });
+
+  it("keeps expired bag notices out of product shelves", () => {
+    vi.mocked(useCartSnapshot).mockReturnValue({ cart: null, confirmedCart: null, loaded: true, loading: false, pending: false, message: "Your previous bag expired. Start a new bag to continue." });
+
+    const markup = renderToStaticMarkup(createElement(ProductGrid, { products: [product], listName: "Home featured" }));
+
+    expect(markup).not.toContain("Your previous bag expired");
+  });
+
+  it("keeps other cart operation messages visible in product shelves", () => {
+    vi.mocked(useCartSnapshot).mockReturnValue({ cart: null, confirmedCart: null, loaded: true, loading: false, pending: false, message: "Some items could not be added." });
+
+    const markup = renderToStaticMarkup(createElement(ProductGrid, { products: [product], listName: "Home featured" }));
+
+    expect(markup).toContain("Some items could not be added.");
   });
 });

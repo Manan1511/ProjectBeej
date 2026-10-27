@@ -2,7 +2,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { readCartCookie } from "@/lib/commerce";
 import type { BeejProduct, CartLine, ProductFaq, ProductReview, ShopifyCart, ShopifyCartSnapshot, SiteSettings } from "@/lib/types";
-import { parseAnnouncement, parseHomeCopy, parseStorefrontSlides } from "@/lib/storefront-settings";
+import { parseAboutCopy, parseAnnouncement, parseFooterCopy, parseHomeCopy, parseShopCopy, parseSiteVisibility, parseStorefrontSlides } from "@/lib/storefront-settings";
 import type { ConsentPreferences } from "@/lib/tracking-types";
 import type { CartTargetOperations } from "@/lib/cart-actions";
 
@@ -107,11 +107,12 @@ async function publicStorefrontQuery<T, Result = T>(
   query: string,
   variables: Record<string, unknown> = {},
   validate: (data: T) => Result = ((data: T) => data as unknown as Result),
+  tags: string[] = [],
 ): Promise<Result> {
   const cachedQuery = unstable_cache(
     async () => validate(await storefrontQuery<T>(query, variables)),
     ["project-beej-public-storefront", domain, API_VERSION, getStorefrontMode(), query, JSON.stringify(variables)],
-    { revalidate: 60 },
+    { revalidate: 60, ...(tags.length ? { tags } : {}) },
   );
   return cachedQuery();
 }
@@ -291,6 +292,15 @@ function mapSiteSettings(data: { shop?: { id?: string; paymentSettings?: { curre
   };
   const homeCopy = parseHomeCopy(parsed.homeCopy);
   if (homeCopy) settings.homeCopy = homeCopy;
+  const shopCopy = parseShopCopy(parsed.shopCopy);
+  if (shopCopy) settings.shopCopy = shopCopy;
+  const aboutCopy = parseAboutCopy(parsed.aboutCopy);
+  if (aboutCopy) settings.aboutCopy = aboutCopy;
+  const footerCopy = parseFooterCopy(parsed.footerCopy);
+  if (footerCopy) settings.footerCopy = footerCopy;
+  const visibility = parseSiteVisibility(parsed.visibility);
+  if (visibility) settings.visibility = visibility;
+  if (parsed.contentVersion === 1) settings.contentVersion = 1;
   const announcement = parseAnnouncement(parsed.announcement);
   if (announcement) settings.announcement = announcement;
   if (typeof parsed.contactEmail === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parsed.contactEmail)) settings.contactEmail = parsed.contactEmail;
@@ -305,8 +315,9 @@ export async function getSiteSettings(): Promise<SiteSettings> {
   try {
     return await publicStorefrontQuery<{ shop?: { id?: string; paymentSettings?: { currencyCode?: string }; storefrontSettings?: { value: string } | null } }, SiteSettings>(
       `query BeejSettings { shop { id paymentSettings { currencyCode } storefrontSettings: metafield(namespace: "beej", key: "storefront_settings") { value } } }`,
-      {},
+    {},
       mapSiteSettings,
+      ["storefront-settings"],
     );
   } catch {
     if (getStorefrontMode() === "preview") return {};
@@ -508,4 +519,144 @@ export async function getFreshShopifyCheckoutUrl(cartId: string, consent: Consen
     buyerIp,
   );
   return data.cart?.checkoutUrl || null;
+}
+
+export type ShopifyCheckoutAddress = {
+  firstName: string;
+  lastName: string;
+  address1: string;
+  address2?: string;
+  city: string;
+  province: string;
+  provinceCode?: string;
+  countryCode: "IN";
+  zip: string;
+  phone: string;
+};
+
+export type ShopifyDeliveryOption = {
+  handle: string;
+  title: string;
+  description: string | null;
+  amount: string;
+  currencyCode: string;
+};
+
+export type ShopifyDeliveryGroup = {
+  id: string;
+  options: ShopifyDeliveryOption[];
+};
+
+export type ShopifyDeliveryCartQuote = {
+  cartId: string;
+  totalQuantity: number;
+  subtotal: { amount: string; currencyCode: string };
+  total: { amount: string; currencyCode: string };
+  groups: ShopifyDeliveryGroup[];
+};
+
+const DELIVERY_GROUP_FIELDS = `deliveryGroups(first: 10) { nodes { id deliveryOptions { handle title description estimatedCost { amount currencyCode } } } }`;
+
+function throwDeliveryErrors(errors: Array<{ message?: string }> | null | undefined, fallback: string): void {
+  if (errors?.length) throw new Error(errors[0]?.message || fallback);
+}
+
+function normalizeDeliveryQuote(cart: {
+  id: string;
+  totalQuantity: number;
+  cost: { subtotalAmount: { amount: string; currencyCode: string }; totalAmount: { amount: string; currencyCode: string } };
+  deliveryGroups: { nodes: Array<{ id: string; deliveryOptions: Array<{ handle: string; title: string | null; description: string | null; estimatedCost: { amount: string; currencyCode: string } }> }> };
+} | null): ShopifyDeliveryCartQuote {
+  if (!cart) throw new Error("Your bag expired. Add your snacks again to continue.");
+  const groups = cart.deliveryGroups.nodes.map((group) => ({
+    id: group.id,
+    options: group.deliveryOptions.map((option) => ({
+      handle: option.handle,
+      title: option.title || "Delivery",
+      description: option.description,
+      amount: option.estimatedCost.amount,
+      currencyCode: option.estimatedCost.currencyCode,
+    })),
+  }));
+  if (!groups.length || groups.some((group) => group.options.length === 0)) throw new Error("No delivery methods are available for this address.");
+  return {
+    cartId: cart.id,
+    totalQuantity: cart.totalQuantity,
+    subtotal: cart.cost.subtotalAmount,
+    total: cart.cost.totalAmount,
+    groups,
+  };
+}
+
+/** Assigns the buyer's one-time shipping address and reads Shopify's current delivery options. */
+export async function getShopifyDeliveryOptions(
+  cartId: string,
+  address: ShopifyCheckoutAddress,
+  buyerIp?: string | null,
+): Promise<ShopifyDeliveryCartQuote> {
+  const safeId = readCartCookie(cartId);
+  if (!safeId) throw new Error("Invalid Shopify cart ID.");
+
+  const addressQuery = `query BeejCartDeliveryAddresses($id: ID!) { cart(id: $id) { delivery { addresses { id selected } } } }`;
+  const current = await storefrontQuery<{ cart: { delivery: { addresses: Array<{ id: string; selected: boolean }> } } | null }>(addressQuery, { id: safeId }, buyerIp);
+  if (!current.cart) throw new Error("Your bag expired. Add your snacks again to continue.");
+
+  const selected = current.cart.delivery.addresses.find((item) => item.selected) || current.cart.delivery.addresses[0];
+  if (selected) {
+    const update = await storefrontQuery<{ cartDeliveryAddressesUpdate: { userErrors: Array<{ message: string }> } }>(
+      `mutation BeejUpdateCartDeliveryAddress($cartId: ID!, $addresses: [CartSelectableAddressUpdateInput!]!) { cartDeliveryAddressesUpdate(cartId: $cartId, addresses: $addresses) { userErrors { message } } }`,
+      { cartId: safeId, addresses: [{ id: selected.id, address: { deliveryAddress: address }, selected: true, oneTimeUse: true }] },
+      buyerIp,
+    );
+    throwDeliveryErrors(update.cartDeliveryAddressesUpdate.userErrors, "Shopify could not validate this delivery address.");
+  } else {
+    const add = await storefrontQuery<{ cartDeliveryAddressesAdd: { userErrors: Array<{ message: string }> } }>(
+      `mutation BeejAddCartDeliveryAddress($cartId: ID!, $addresses: [CartSelectableAddressInput!]!) { cartDeliveryAddressesAdd(cartId: $cartId, addresses: $addresses) { userErrors { message } } }`,
+      { cartId: safeId, addresses: [{ address: { deliveryAddress: address }, selected: true, oneTimeUse: true }] },
+      buyerIp,
+    );
+    throwDeliveryErrors(add.cartDeliveryAddressesAdd.userErrors, "Shopify could not validate this delivery address.");
+  }
+
+  const result = await storefrontQuery<{ cart: Parameters<typeof normalizeDeliveryQuote>[0] }>(
+    `query BeejCartDeliveryOptions($id: ID!) { cart(id: $id) { id totalQuantity cost { subtotalAmount { amount currencyCode } totalAmount { amount currencyCode } } ${DELIVERY_GROUP_FIELDS} } }`,
+    { id: safeId },
+    buyerIp,
+  );
+  return normalizeDeliveryQuote(result.cart);
+}
+
+/** Selects only handles returned for the same cart and returns Shopify's updated total. */
+export async function selectShopifyDeliveryOptions(
+  cartId: string,
+  selections: Array<{ deliveryGroupId: string; deliveryOptionHandle: string }>,
+  buyerIp?: string | null,
+): Promise<ShopifyDeliveryCartQuote> {
+  const safeId = readCartCookie(cartId);
+  if (!safeId || !selections.length || selections.length > 10) throw new Error("Choose a delivery method to continue.");
+
+  const current = await storefrontQuery<{ cart: Parameters<typeof normalizeDeliveryQuote>[0] }>(
+    `query BeejCheckDeliveryOptions($id: ID!) { cart(id: $id) { id totalQuantity cost { subtotalAmount { amount currencyCode } totalAmount { amount currencyCode } } ${DELIVERY_GROUP_FIELDS} } }`,
+    { id: safeId },
+    buyerIp,
+  );
+  const quote = normalizeDeliveryQuote(current.cart);
+  if (quote.groups.length !== selections.length) throw new Error("Delivery choices changed. Refresh the available methods and try again.");
+  const groups = new Map(quote.groups.map((group) => [group.id, group]));
+  const seen = new Set<string>();
+  for (const selection of selections) {
+    const group = groups.get(selection.deliveryGroupId);
+    if (!group || seen.has(selection.deliveryGroupId) || !group.options.some((option) => option.handle === selection.deliveryOptionHandle)) {
+      throw new Error("A selected delivery method is no longer available. Refresh the available methods and try again.");
+    }
+    seen.add(selection.deliveryGroupId);
+  }
+
+  const update = await storefrontQuery<{ cartSelectedDeliveryOptionsUpdate: { userErrors: Array<{ message: string }>; cart: Parameters<typeof normalizeDeliveryQuote>[0] } }>(
+    `mutation BeejSelectDeliveryOptions($cartId: ID!, $selectedDeliveryOptions: [CartSelectedDeliveryOptionInput!]!) { cartSelectedDeliveryOptionsUpdate(cartId: $cartId, selectedDeliveryOptions: $selectedDeliveryOptions) { userErrors { message } cart { id totalQuantity cost { subtotalAmount { amount currencyCode } totalAmount { amount currencyCode } } ${DELIVERY_GROUP_FIELDS} } } }`,
+    { cartId: safeId, selectedDeliveryOptions: selections },
+    buyerIp,
+  );
+  throwDeliveryErrors(update.cartSelectedDeliveryOptionsUpdate.userErrors, "Shopify could not select this delivery method.");
+  return normalizeDeliveryQuote(update.cartSelectedDeliveryOptionsUpdate.cart);
 }

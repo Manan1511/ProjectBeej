@@ -87,13 +87,23 @@ The privacy policy, refund policy, and terms page read Shopify's native policy f
 
 Set `SHOPIFY_ADMIN_CLIENT_ID` and `SHOPIFY_ADMIN_CLIENT_SECRET` from the installed Shopify Dev Dashboard app in `.env.local` and Netlify's server environment. Keep both server-only. The app exchanges them for short-lived Admin API access tokens and refreshes tokens automatically.
 
-Grant this app `read_orders` for paid-order and refund reconciliation, plus `write_customers` for newsletter signup and explicit email marketing consent. Shopify limits standard order access to the most recent 60 days; do not request `read_all_orders` unless older-order reconciliation becomes a confirmed requirement. The tracking webhook handler uses the app client secret to verify webhook signatures; set `SHOPIFY_TRACKING_WEBHOOK_SECRET` only if an explicit override is needed.
+Grant this app `read_orders` for paid-order and refund reconciliation, plus `write_customers` for newsletter signup and explicit email marketing consent. The Cashfree sandbox flow also needs `read_draft_orders`, `write_draft_orders`, and `write_orders`: Shopify drafts hold the server-calculated amount and delivery address, then a verified sandbox payment is reconciled to a Shopify test order. Shopify limits standard order access to the most recent 60 days; do not request `read_all_orders` unless older-order reconciliation becomes a confirmed requirement. The tracking webhook handler uses the app client secret to verify webhook signatures; set `SHOPIFY_TRACKING_WEBHOOK_SECRET` only if an explicit override is needed.
 
 Configure `orders/paid` and `refunds/create` webhooks to `https://YOUR_FINAL_DOMAIN/api/webhooks/shopify/tracking`. Newsletter sign-up validates the address and the required, unchecked-by-default consent box, rate-limits requests, upserts the Shopify customer, and records the consent timestamp and single-opt-in level. No signup is reported as successful if Shopify is not configured or rejects the write.
 
 ## 5. Payments, checkout, and shipping
 
-Cart and Buy Now both create Shopify carts and redirect to a fresh Shopify checkout URL. Buy Now creates an independent one-item cart and does not replace the shopper's saved bag. Razorpay Secure must be installed and enabled for the India store in Shopify Admin. Configure merchant-managed India shipping rates there; checkout is authoritative for delivery charge, tax, discounts, payment status, and order total. Set `SHOPIFY_SHIPPING_CONFIGURED=1` only after Shopify shipping rates have been checked.
+Shopify remains the product, price, inventory, tax, discount, and delivery source of truth. Cart checkout and Buy Now can use Cashfree Hosted Checkout in **sandbox mode only**. The server reads the Shopify cart, asks Shopify for delivery options and a final INR total, creates a Shopify draft and then a Cashfree sandbox order. After Cashfree confirms a successful payment through its server API or signed webhook, Shopify receives a test order with inventory bypassed. These orders are for integration verification and do not reserve stock or represent real payments. If Cashfree is not configured, cart checkout retains the existing Shopify checkout flow. Buy Now always uses a separate one-item cart and leaves the shopper's bag intact.
+
+Before trying Cashfree sandbox:
+
+1. Publish the products to the Headless sales channel and configure India shipping rates in Shopify. Cashfree checkout requires Shopify to return at least one valid delivery option for the entered PIN code.
+2. Set `SHOPIFY_MODE=live` for the environment used to verify against the actual Shopify catalog. Preview mode deliberately disables purchases.
+3. In `.env.local` or server-only Netlify environment settings, set `CASHFREE_ENVIRONMENT=sandbox`, `CASHFREE_API_VERSION=2026-01-01`, `CASHFREE_APP_ID`, and `CASHFREE_SECRET_KEY` from the Cashfree **test** credentials. Create an independent `CASHFREE_SESSION_SECRET` with `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`. Never add these values to Git, `.env.example`, `NEXT_PUBLIC_*`, or a browser request.
+4. Allowlist the storefront domain in the Cashfree dashboard. Configure the Cashfree payment webhook URL as `https://YOUR_FINAL_DOMAIN/api/webhooks/cashfree`; the handler verifies Cashfree's signature and confirms status from Cashfree's server API before creating a Shopify test order.
+5. Keep the Supabase-backed rate limiter configured for payment order creation. The website uses its existing durable limiter to restrict repeated attempts.
+
+Cashfree production mode is intentionally unsupported by this integration. Changing `CASHFREE_ENVIRONMENT` to `production` disables the Cashfree path; a live launch needs a separate review of refunds, cancellations, fulfilment, inventory, tax, chargeback, and reconciliation handling before production credentials can be enabled. Do not put real Cashfree credentials in a preview deployment. Set `SHOPIFY_SHIPPING_CONFIGURED=1` only after the Shopify shipping profile has been checked; this flag affects the fallback checkout copy, while the Cashfree amount is calculated from Shopify delivery selections at checkout.
 
 COD is not enabled. Do not turn it on until merchant dispatch and collection workflows are approved. Amazon MCF is not connected in this release; complete seller onboarding, connector/SKU mapping, inventory and tracking checks before changing fulfillment.
 
@@ -114,7 +124,7 @@ Netlify runs Next.js server routes as managed functions, so there is no persiste
 - Replace/rotate any shared credentials and enter the new values through private server settings.
 - Publish real products and confirm prices, inventory, taxes, catalog access, product facts and images.
 - Add and approve Shopify policies and About page content; confirm business contact email and WhatsApp/social links.
-- Activate Razorpay Secure and verify Shopify order, payment state, totals, inventory decrement, failure and retry paths with an authorized test transaction.
+- Verify Cashfree sandbox order creation, payment success/failure, webhook reconciliation, Shopify test order details, final totals, duplicate retries, and the fact that test orders do not decrement inventory. Keep Shopify checkout available as fallback.
 - Confirm shipping zones and rates in checkout; test the ₹499 threshold only if the configured Shopify rates actually match it.
 - Configure Netlify hosting/domain/HTTPS, then check checkout, SEO, redirects and secret exposure on the deployed host.
 - Do not use a live test order without merchant authorization and a plan to prevent unintended dispatch.
