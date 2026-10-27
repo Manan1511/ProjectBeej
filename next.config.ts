@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    agentUpgrade: "security",
+  },
   env: {
     TRACKING_DEPLOY_CONTEXT: process.env.CONTEXT ?? "",
   },
