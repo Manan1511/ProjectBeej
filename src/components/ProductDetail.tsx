@@ -95,7 +95,7 @@ export function ProductDetail({ product, faqs, reviews }: { product: BeejProduct
         <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/shop">Shop</Link><span>/</span><Link href={product.productType === "Ready to Roast" ? "/collections/ready-to-roast" : "/collections/roasted-makhana"}>{product.productType}</Link><span>/</span><span aria-current="page">{product.title}</span></nav>
         <div className="product-detail-grid artifact-product-layout">
           <div className="product-gallery">
-            <div className="product-main-image" style={{ "--product-tint": skin.tint } as React.CSSProperties}>
+            <div className="product-main-image">
               {product.images[activeImage] ? <Image src={product.images[activeImage].url} alt={product.images[activeImage].alt} fill sizes="(max-width: 760px) 100vw, 54vw" preload={activeImage === 0} /> : <Image className="product-fallback-mascot" src={skin.mascot} alt="" fill sizes="(max-width: 760px) 100vw, 54vw" />}
             </div>
             <div className="product-thumbnails" aria-label="Product photos">
